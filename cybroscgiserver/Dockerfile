@@ -1,47 +1,69 @@
-FROM python:3.8-buster
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:12.2.7
+# hadolint ignore=DL3006
+FROM ${BUILD_FROM}
 
-LABEL org.opencontainers.image.authors="Daniel Gangl <killer007@gmx.at>"
-LABEL SCGI_SERVER_VERSION="3.1.3"
+ARG BUILD_ARCH=amd64
 
-WORKDIR /tmp/
+# Set shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update
+# Copy Python requirements file
+COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
 
-RUN apt-get upgrade -y
+# Setup base
+# hadolint ignore=DL3003,DL3042
+RUN \
+    apk add --no-cache \
+        #build-base \
+        #libffi-dev \
+        py3-wheel \
+        python3-dev \
+    \
+    && apk add --no-cache \
+        py3-bcrypt \
+        py3-cryptography \
+        py3-pip \
+        python3 \
+    \
+    && pip install -r /tmp/requirements.txt \
+    \
+    && pip install dos2unix \
+    \
+    && apk del --no-cache
 
-RUN apt-get install -y curl nginx
+# Copy root filesystem
+COPY rootfs /
 
-RUN unlink /etc/nginx/sites-enabled/default
+RUN for file in /etc/services.d/*/*; do \
+    dos2unix $file; \
+    chmod a+xwr $file; \
+    done
 
-COPY ./nginx /etc/nginx/sites-available/
+# Build arguments
+ARG BUILD_ARCH
+ARG BUILD_DATE
+ARG BUILD_DESCRIPTION
+ARG BUILD_NAME
+ARG BUILD_REF
+ARG BUILD_REPOSITORY
+ARG BUILD_VERSION
 
-COPY ./nginx /etc/nginx/sites-enabled/
-
-RUN wget https://cybrotech.com/wp-content/uploads/2017/01/CyBroScgiServer-v3.1.3.zip
-
-RUN unzip *.zip
-
-RUN mv */scgi_server/ /usr/local/bin/
-
-RUN rm -r *
-
-WORKDIR /usr/local/bin/scgi_server/
-
-RUN pip install -r src/requirements.txt
-
-RUN mkdir /usr/local/bin/scgi_server/log && touch /usr/local/bin/scgi_server/log/scgi.log && ln -sf /dev/stdout /usr/local/bin/scgi_server/log/scgi.log
-
-COPY run.sh /usr/local/bin/scgi_server/
-
-COPY ./config /usr/local/bin/scgi_server/
-
-RUN chmod +x run.sh
-
-CMD /usr/local/bin/scgi_server/run.sh
-
-HEALTHCHECK --interval=5s --timeout=2s --retries=12 \
-  CMD curl --silent --fail http://localhost:80/?sys.server_uptime || exit 1
-
-EXPOSE 4000/tcp
-EXPOSE 8442/udp
-EXPOSE 80/tcp
+# Labels
+LABEL \
+    io.hass.name="${BUILD_NAME}" \
+    io.hass.description="${BUILD_DESCRIPTION}" \
+    io.hass.arch="${BUILD_ARCH}" \
+    io.hass.type="addon" \
+    io.hass.version=${BUILD_VERSION} \
+    maintainer="Daniel Gangl <killer007@gmx.at>" \
+    org.opencontainers.image.title="${BUILD_NAME}" \
+    org.opencontainers.image.description="${BUILD_DESCRIPTION}" \
+    org.opencontainers.image.vendor="Home Assistant Community Add-ons" \
+    org.opencontainers.image.authors="Franck Nijhof <frenck@addons.community>" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.url="https://addons.community" \
+    org.opencontainers.image.source="https://github.com/${BUILD_REPOSITORY}" \
+    org.opencontainers.image.documentation="https://github.com/${BUILD_REPOSITORY}/blob/main/README.md" \
+    org.opencontainers.image.created=${BUILD_DATE} \
+    org.opencontainers.image.revision=${BUILD_REF} \
+    org.opencontainers.image.version=${BUILD_VERSION}
