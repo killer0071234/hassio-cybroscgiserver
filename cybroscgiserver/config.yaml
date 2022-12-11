@@ -1,7 +1,7 @@
 ---
 version: dev
-slug: cybroscgiserver
-name: CybroScgiServer
+slug: cybroscgiserver_test
+name: CybroScgiServer_test
 description: SCGI serer to communicate to PLCs from Cybrotech / Robotina
 url: https://github.com/killer0071234/hassio-cybroscgiserver
 codenotary: killer007@gmx.at
