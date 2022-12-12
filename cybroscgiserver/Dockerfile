@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:13.0.0
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:12.2.7
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 
@@ -37,11 +37,6 @@ RUN \
 
 # Copy root filesystem
 COPY rootfs /
-
-RUN for file in /etc/services.d/*/*; do \
-    dos2unix $file; \
-    chmod a+xwr $file; \
-    done
 
 # Build arguments
 ARG BUILD_ARCH
