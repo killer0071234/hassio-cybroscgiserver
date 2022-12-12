@@ -16,18 +16,16 @@ RUN \
     apk add --no-cache \
         #build-base \
         #libffi-dev \
-        py3-wheel \
-        python3-dev \
+        py3-wheel=0.37.1-r0 \
+        python3-dev=3.10.9-r0 \
     \
     && apk add --no-cache \
-        py3-bcrypt \
-        py3-cryptography \
-        py3-pip \
-        python3 \
+        py3-bcrypt=3.2.2-r0 \
+        py3-cryptography=3.4.8-r1 \
+        py3-pip=22.1.1-r0 \
+        python3=3.10.9-r0 \
     \
     && pip install -r /tmp/requirements.txt \
-    \
-    && pip install dos2unix \
     \
     && apk del --no-cache
 
