@@ -1,0 +1,128 @@
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.09kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for ghcr.io/hassio-addons/base:14.0.2
+#3 DONE 4.3s
+
+#4 [1/4] FROM ghcr.io/hassio-addons/base:14.0.2@sha256:a275d0636db881663d331c35ecaf4d73cd10b95dd55ad63919c8fdaf9d10c828
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 18.68kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/4] COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
+#6 DONE 0.0s
+
+#7 [3/4] RUN     apk add --no-cache --virtual .build-dependencies         build-base         libffi-dev         py3-wheel         python3-dev         && apk add --no-cache         py3-bcrypt         py3-cryptography         py3-pip         python3         && pip install -r /tmp/requirements.txt         && find /usr         ( -type d -a -name test -o -name tests -o -name '__pycache__' )         -o ( -type f -a -name '*.pyc' -o -name '*.pyo' )         -exec rm -rf '{}' +         && apk del --no-cache --purge .build-dependencies
+#7 0.169 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/main/x86_64/APKINDEX.tar.gz
+#7 0.637 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/community/x86_64/APKINDEX.tar.gz
+#7 1.903 (1/44) Installing libgcc (12.2.1_git20220924-r10)
+#7 1.971 (2/44) Installing libstdc++ (12.2.1_git20220924-r10)
+#7 2.337 (3/44) Installing zstd-libs (1.5.5-r4)
+#7 2.744 (4/44) Installing binutils (2.40-r7)
+#7 4.139 (5/44) Installing libmagic (5.44-r4)
+#7 4.413 (6/44) Installing file (5.44-r4)
+#7 4.466 (7/44) Installing libgomp (12.2.1_git20220924-r10)
+#7 4.551 (8/44) Installing libatomic (12.2.1_git20220924-r10)
+#7 4.605 (9/44) Installing gmp (6.2.1-r3)
+#7 4.729 (10/44) Installing isl26 (0.26-r1)
+#7 5.110 (11/44) Installing mpfr4 (4.2.0-r3)
+#7 5.386 (12/44) Installing mpc1 (1.3.1-r1)
+#7 5.451 (13/44) Installing gcc (12.2.1_git20220924-r10)
+#7 19.02 (14/44) Installing libstdc++-dev (12.2.1_git20220924-r10)
+#7 22.96 (15/44) Installing musl-dev (1.2.4-r0)
+#7 24.90 (16/44) Installing libc-dev (0.7.2-r5)
+#7 24.95 (17/44) Installing g++ (12.2.1_git20220924-r10)
+#7 29.52 (18/44) Installing make (4.4.1-r1)
+#7 29.60 (19/44) Installing fortify-headers (1.1-r3)
+#7 29.65 (20/44) Installing patch (2.7.6-r10)
+#7 29.71 (21/44) Installing build-base (0.5-r3)
+#7 29.75 (22/44) Installing linux-headers (6.3-r0)
+#7 30.21 (23/44) Installing libffi (3.4.4-r2)
+#7 30.25 (24/44) Installing pkgconf (1.9.5-r0)
+#7 30.30 (25/44) Installing libffi-dev (3.4.4-r2)
+#7 30.37 (26/44) Installing libbz2 (1.0.8-r5)
+#7 30.42 (27/44) Installing libexpat (2.5.0-r1)
+#7 30.49 (28/44) Installing gdbm (1.23-r1)
+#7 30.54 (29/44) Installing xz-libs (5.4.3-r0)
+#7 30.62 (30/44) Installing mpdecimal (2.5.1-r2)
+#7 30.70 (31/44) Installing libpanelw (6.4_p20230506-r0)
+#7 30.74 (32/44) Installing sqlite-libs (3.41.2-r2)
+#7 30.91 (33/44) Installing python3 (3.11.4-r0)
+#7 33.17 (34/44) Installing python3-pycache-pyc0 (3.11.4-r0)
+#7 34.63 (35/44) Installing pyc (0.1-r0)
+#7 34.66 (36/44) Installing py3-parsing (3.0.9-r2)
+#7 34.74 (37/44) Installing py3-parsing-pyc (3.0.9-r2)
+#7 34.84 (38/44) Installing py3-packaging (23.1-r1)
+#7 34.89 (39/44) Installing py3-packaging-pyc (23.1-r1)
+#7 34.96 (40/44) Installing py3-wheel-pyc (0.40.0-r1)
+#7 35.01 (41/44) Installing python3-pyc (3.11.4-r0)
+#7 35.05 (42/44) Installing py3-wheel (0.40.0-r1)
+#7 35.10 (43/44) Installing python3-dev (3.11.4-r0)
+#7 47.63 (44/44) Installing .build-dependencies (20230704.211553)
+#7 47.64 Executing busybox-1.36.1-r0.trigger
+#7 47.64 OK: 370 MiB in 73 packages
+#7 47.68 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/main/x86_64/APKINDEX.tar.gz
+#7 48.02 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/community/x86_64/APKINDEX.tar.gz
+#7 48.44 (1/12) Installing py3-cparser (2.21-r2)
+#7 48.52 (2/12) Installing py3-cparser-pyc (2.21-r2)
+#7 48.61 (3/12) Installing py3-cffi (1.15.1-r3)
+#7 48.71 (4/12) Installing py3-cffi-pyc (1.15.1-r3)
+#7 48.80 (5/12) Installing py3-bcrypt (4.0.1-r2)
+#7 48.90 (6/12) Installing py3-bcrypt-pyc (4.0.1-r2)
+#7 48.94 (7/12) Installing py3-cryptography (40.0.2-r1)
+#7 49.17 (8/12) Installing py3-cryptography-pyc (40.0.2-r1)
+#7 49.29 (9/12) Installing py3-setuptools (67.7.2-r0)
+#7 49.49 (10/12) Installing py3-setuptools-pyc (67.7.2-r0)
+#7 49.85 (11/12) Installing py3-pip (23.1.2-r0)
+#7 50.32 (12/12) Installing py3-pip-pyc (23.1.2-r0)
+#7 51.00 Executing busybox-1.36.1-r0.trigger
+#7 51.01 OK: 399 MiB in 85 packages
+#7 51.71 Looking in links: https://wheels.home-assistant.io/musllinux/
+#7 51.75 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#7 51.84 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/main/x86_64/APKINDEX.tar.gz
+#7 52.19 fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/community/x86_64/APKINDEX.tar.gz
+#7 52.73 (1/26) Purging .build-dependencies (20230704.211553)
+#7 52.73 (2/26) Purging build-base (0.5-r3)
+#7 52.73 (3/26) Purging file (5.44-r4)
+#7 52.73 (4/26) Purging g++ (12.2.1_git20220924-r10)
+#7 52.73 (5/26) Purging libstdc++-dev (12.2.1_git20220924-r10)
+#7 52.75 (6/26) Purging gcc (12.2.1_git20220924-r10)
+#7 52.76 (7/26) Purging binutils (2.40-r7)
+#7 52.77 (8/26) Purging libatomic (12.2.1_git20220924-r10)
+#7 52.77 (9/26) Purging libgomp (12.2.1_git20220924-r10)
+#7 52.77 (10/26) Purging make (4.4.1-r1)
+#7 52.77 (11/26) Purging libc-dev (0.7.2-r5)
+#7 52.77 (12/26) Purging musl-dev (1.2.4-r0)
+#7 52.77 (13/26) Purging fortify-headers (1.1-r3)
+#7 52.77 (14/26) Purging patch (2.7.6-r10)
+#7 52.77 (15/26) Purging libffi-dev (3.4.4-r2)
+#7 52.77 (16/26) Purging linux-headers (6.3-r0)
+#7 52.78 (17/26) Purging py3-wheel-pyc (0.40.0-r1)
+#7 52.78 (18/26) Purging py3-wheel (0.40.0-r1)
+#7 52.78 (19/26) Purging python3-dev (3.11.4-r0)
+#7 52.79 (20/26) Purging isl26 (0.26-r1)
+#7 52.79 (21/26) Purging libmagic (5.44-r4)
+#7 52.79 (22/26) Purging mpc1 (1.3.1-r1)
+#7 52.79 (23/26) Purging mpfr4 (4.2.0-r3)
+#7 52.79 (24/26) Purging pkgconf (1.9.5-r0)
+#7 52.79 (25/26) Purging zstd-libs (1.5.5-r4)
+#7 52.79 (26/26) Purging gmp (6.2.1-r3)
+#7 52.79 Executing busybox-1.36.1-r0.trigger
+#7 52.79 OK: 91 MiB in 59 packages
+#7 DONE 52.8s
+
+#8 [4/4] COPY rootfs /
+#8 DONE 0.0s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 0.2s done
+#9 writing image sha256:d5cc9ce8a6b8dcec1e178edb7bb3523bb4df53d243fa15db73031c9805112865 done
+#9 DONE 0.2s
