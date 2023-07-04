@@ -11,19 +11,19 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
 
 # Setup base
-# hadolint ignore=DL3003,DL3042
+# hadolint ignore=DL3003,DL3042,DL3018
 RUN \
     apk add --no-cache --virtual .build-dependencies \
-        build-base \
-        libffi-dev \
-        py3-wheel \
-        python3-dev \
+        build-base=0.5-r3 \
+        libffi-dev=3.4.4-r2 \
+        py3-wheel=0.40.0-r1 \
+        python3-dev=3.11.4-r0 \
     \
     && apk add --no-cache \
-        py3-bcrypt \
-        py3-cryptography \
-        py3-pip \
-        python3 \
+        py3-bcrypt=4.0.1-r2 \
+        py3-cryptography=40.0.2-r1 \
+        py3-pip=23.1.2-r0 \
+        python3=3.11.4-r0 \
     \
     && pip install -r /tmp/requirements.txt \
     \
