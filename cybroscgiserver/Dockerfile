@@ -1,4 +1,6 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:14.0.2
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
+#ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.7
+ARG BUILD_FROM
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 
@@ -15,15 +17,15 @@ COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
 RUN \
     apk add --no-cache --virtual .build-dependencies \
         build-base=0.5-r3 \
-        libffi-dev=3.4.4-r2 \
-        py3-wheel=0.40.0-r1 \
-        python3-dev=3.11.4-r0 \
+        libffi-dev=3.4.4-r3 \
+        py3-wheel=0.42.0-r0 \
+        python3-dev=3.11.8-r0 \
     \
     && apk add --no-cache \
-        py3-bcrypt=4.0.1-r2 \
-        py3-cryptography=40.0.2-r1 \
-        py3-pip=23.1.2-r0 \
-        python3=3.11.4-r0 \
+        py3-bcrypt=4.1.1-r0 \
+        py3-cryptography=41.0.7-r0 \
+        py3-pip=23.3.1-r0 \
+        python3=3.11.8-r0 \
     \
     && pip install -r /tmp/requirements.txt \
     \
@@ -34,9 +36,13 @@ RUN \
     \
     && apk del --no-cache --purge .build-dependencies
 
-
 # Copy root filesystem
 COPY rootfs /
+
+# do post modifications
+RUN mkdir /usr/local/bin/scgi_server/log \
+    && touch /usr/local/bin/scgi_server/log/scgi.log \
+    && ln -sf /dev/stdout /usr/local/bin/scgi_server/log/scgi.log
 
 # Build arguments
 ARG BUILD_ARCH
@@ -57,8 +63,8 @@ LABEL \
     maintainer="Daniel Gangl <killer007@gmx.at>" \
     org.opencontainers.image.title="${BUILD_NAME}" \
     org.opencontainers.image.description="${BUILD_DESCRIPTION}" \
-    org.opencontainers.image.vendor="Home Assistant Community Add-ons" \
-    org.opencontainers.image.authors="Franck Nijhof <frenck@addons.community>" \
+    org.opencontainers.image.vendor="Home Assistant Daniel's Add-ons" \
+    org.opencontainers.image.authors="Daniel Gangl <killer007@gmx.at>" \
     org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.url="https://addons.community" \
     org.opencontainers.image.source="https://github.com/${BUILD_REPOSITORY}" \

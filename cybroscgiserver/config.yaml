@@ -1,9 +1,12 @@
 ---
-version: dev
+# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
+version: "dev"
 slug: cybroscgiserver
 name: CybroScgiServer
-description: SCGI serer to communicate to PLCs from Cybrotech / Robotina
-url: https://github.com/killer0071234/hassio-cybroscgiserver
+description:
+  SCGI serer to communicate to PLCs from Cybrotech / Robotina
+  # yamllint disable-line rule:line-length
+url: https://github.com/killer0071234/ha-addon-repository/tree/main/cybroscgiserver
 codenotary: killer007@gmx.at
 init: false
 arch:
@@ -13,17 +16,22 @@ arch:
   - armv7
   - i386
 options:
-  configuration_file: /config/cybroscgiserver/config.ini
+  configuration_file: /config/cybroscgiserver_config.ini
+  autodetect_address: 192.168.1.255
+  request_period_s: 5
+  valid_period_s: 10
+  cleanup_period_s: 60
 schema:
   configuration_file: str
-  log_level: list(trace|debug|info|notice|warning|error|fatal)?
+  autodetect_address: str
+  request_period_s: int(0,60)
+  valid_period_s: int(0,60)
+  cleanup_period_s: int(0,300)
+  verbose_level: list(DEBUG|INFO|WARNING|ERROR|CRITICAL)?
 ports:
-  80/tcp: 8480
-  4000/tcp: null
+  4000/tcp: 4000
   8442/udp: 8442
-ports_description:
-  80/tcp: SCGI Web interface
-  4000/tcp: Direct SCGI web port (without http-headers)
-  8442/udp: Abus push port
 map:
-  - config:rw
+  - homeassistant_config:rw
+  - addon_config:rw
+host_network: true
