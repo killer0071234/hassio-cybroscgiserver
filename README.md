@@ -28,5 +28,9 @@ _Not actually tested on any of these architectures_
 [armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 [i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2024.svg
+[project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
+[release-shield]: https://img.shields.io/badge/version-0.2.2-blue.svg
+[release]: https://github.com/killer0071234/hassio-cybroscgiserver/releases/tag/v0.2.2
 [addon-repo-install]: https://github.com/killer0071234/ha-addon-repository#installation
 [cybrotech]: https://cybrotech.com/
