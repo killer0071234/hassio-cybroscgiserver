@@ -1,5 +1,5 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.7
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:16.3.2
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 
@@ -16,15 +16,15 @@ COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
 RUN \
     apk add --no-cache --virtual .build-dependencies \
         build-base=0.5-r3 \
-        libffi-dev=3.4.4-r3 \
-        py3-wheel=0.42.0-r0 \
-        python3-dev=3.11.8-r0 \
+        libffi-dev=3.4.6-r0 \
+        py3-wheel=0.42.0-r1  \
+        python3-dev=3.12.7-r0  \
     \
     && apk add --no-cache \
-        py3-bcrypt=4.1.1-r0 \
-        py3-cryptography=41.0.7-r0 \
-        py3-pip=23.3.1-r0 \
-        python3=3.11.8-r0 \
+        py3-bcrypt=4.1.3-r0 \
+        py3-cryptography=42.0.7-r0 \
+        py3-pip=24.0-r2 \
+        python3=3.12.7-r0 \
     \
     && pip install -r /tmp/requirements.txt \
     \
