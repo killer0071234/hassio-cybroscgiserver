@@ -2,6 +2,10 @@
 
 # Changelog
 
+## [0.2.3] - 2024-10-10
+
+- Update repo to base 16.3.2 (#13) @killer0071234
+
 ## [0.2.2] - 2024-01-04
 
 - Add repository to build config (#8) @killer0071234
