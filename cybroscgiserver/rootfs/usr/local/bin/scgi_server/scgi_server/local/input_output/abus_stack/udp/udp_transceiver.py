@@ -1,0 +1,75 @@
+import asyncio
+import socket
+from asyncio import AbstractEventLoop, DatagramTransport
+
+from lib.general.conditional_logger import ConditionalLogger
+from scgi_server.local.input_output.abus_stack.udp.udp_activity_service \
+    import UdpActivityService
+from scgi_server.local.input_output.abus_stack.udp.udp_message import \
+    UdpMessage
+from scgi_server.local.input_output.abus_stack.udp.udp_protocol import \
+    UdpProtocol
+
+
+class UdpTransceiver:
+    def __init__(self,
+                 log: ConditionalLogger,
+                 main_loop: AbstractEventLoop,
+                 communication_loop: AbstractEventLoop,
+                 transceiver: 'AbusTransceiver',
+                 udp_activity_service: UdpActivityService,
+                 bind_address: str,
+                 port: int):
+        self._log: ConditionalLogger = log
+        self._main_loop: AbstractEventLoop = main_loop
+        self._communication_loop: AbstractEventLoop = communication_loop
+        self._transceiver: 'AbusTransceiver' = transceiver
+        self._transceiver.set_udp_sender(self)
+        self._udp_activity_service: UdpActivityService = udp_activity_service
+        self._bind_address: str = '0.0.0.0' if bind_address == '' else bind_address
+        self._port: int = port
+
+        self._own_bind_addr: tuple[str, int] | None = None
+        self._sender: UdpProtocol | None = None
+
+    async def start(self) -> tuple[str, int]:
+        transport, _ = await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(
+                self._start(),
+                self._communication_loop
+            )
+        )
+
+        self._own_bind_addr: tuple[str, int] = (
+            transport.get_extra_info("socket").getsockname()[:2]
+        )
+        host, port = self._own_bind_addr
+        self._log.info(lambda: f"Listening on {host}:{port}")
+
+        return self._own_bind_addr
+
+    async def _start(self) -> tuple[DatagramTransport, UdpProtocol]:
+        """communication loop"""
+
+        def protocol_factory() -> UdpProtocol:
+            protocol = UdpProtocol(self._log, self)
+            self._sender = protocol
+            return protocol
+
+        return await asyncio.get_running_loop().create_datagram_endpoint(
+            protocol_factory=protocol_factory,
+            local_addr=(self._bind_address, self._port),
+            allow_broadcast=True,
+            family=socket.AF_INET
+        )
+
+    def send(self, udp_msg: UdpMessage) -> None:
+        """communication loop"""
+        self._udp_activity_service.report_tx()
+        self._sender.send(udp_msg)
+
+    def receive(self, udp_msg: UdpMessage) -> None:
+        """communication loop"""
+        if udp_msg.addr != self._own_bind_addr:
+            self._udp_activity_service.report_rx()
+            self._transceiver.receive(udp_msg)
