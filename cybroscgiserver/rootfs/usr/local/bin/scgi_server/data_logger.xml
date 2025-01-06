@@ -1,34 +1,23 @@
-<!--
-Data logger configuration
-
-Configuration file consist of <list>, <sample>, <event> and <alarm> sections.
-
-List is used for repeated names. List name in braces creates as many variables
-as there are items. Multiple lists can be used with the single variable:
-{cybro}.smb{smb}_current{input}. Nesting is not allowed.
-
-Variables in "sample" section are read and stored periodically. Period is defined
-for each task separately, units are s (seconds), min (minutes), h (hours), and d (days).
-
-Variables in "alarm" or "event" sections are read and stored when value is changed
-from 0 to 1. Alarm can be binary (false or true) or analog (high, low or range).
-Class and message are custom labels with no implied meaning. Priority is one of the
-following: low, medium and high; that corresponds to value of 0, 1 or 2.
--->
+<!-- data logger configuration -->
 
 <configuration>
+
+<!-- list create an array of variables -->
+
   <list>
     <group>
       <name>cybro</name>
-      <item>c10000</item>
-      <item>c10001</item>
-      <item>c10002</item>
+      <item>c20000</item>
+      <item>c20001</item>
+      <item>c20002</item>
     </group>
   </list>
 
+  <!-- variables that are written periodically -->
+
   <sample>
     <task>
-      <period>1s</period>
+      <period>5s</period>
       <enabled>true</enabled>
       <variable>{cybro}.cybro_ix00</variable>
       <variable>{cybro}.cybro_ix01</variable>
@@ -43,36 +32,42 @@ following: low, medium and high; that corresponds to value of 0, 1 or 2.
     </task>
   </sample>
 
+  <!-- events are read periodically and written when the variable is set -->
+
   <event>
     <task>
       <period>5s</period>
-      <enabled>false</enabled>
+      <enabled>true</enabled>
       <variable>{cybro}.cybro_qx00</variable>
-      <class>input</class>
+      <class>iomonitor</class>
       <priority>low</priority>
-      <message>Cybro output is activated</message>
+      <message>Controller output is activated</message>
     </task>
   </event>
+
+  <!-- alarms are read periodically and written when the variable is set or out of range -->
 
   <alarm>
     <task>
       <period>5s</period>
+      <enabled>true</enabled>
+      <variable>{cybro}.scan_overrun</variable>
+      <variable>{cybro}.scan_time_max</variable>
       <class>system</class>
       <priority>high</priority>
-      <variable>{cybro}.retentive_fail</variable>
-      <message>Battery empty, retentive memory lost</message>
-      <enabled>true</enabled>
+      <message>Scan time exceeded limit</message>
     </task>
     <task>
       <period>5s</period>
-      <variable>{cybro}.cybro_qw12</variable>
-      <class>analog</class>
-      <priority>medium</priority>
-      <message>Output value is out of limits</message>
-      <lolimit>0</lolimit>
-      <hilimit>1000</hilimit>
-      <hysteresis>100</hysteresis>
       <enabled>true</enabled>
+      <variable>{cybro}.cybro_power_supply</variable>
+      <lolimit>200</lolimit>
+      <hilimit>260</hilimit>
+      <hysteresis>10</hysteresis>
+      <class>system</class>
+      <priority>medium</priority>
+      <message>Power supply out of range</message>
     </task>
   </alarm>
+
 </configuration>

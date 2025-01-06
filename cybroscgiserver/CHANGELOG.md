@@ -2,6 +2,10 @@
 
 # Changelog
 
+## [0.3.0b0] - 2025-01-06
+
+- Update Cybrotech SCGI Server to v3.2.6 from CybroEdgeToolkit (#19) @killer0071234
+
 ## [0.2.4] - 2025-01-06
 
 - Update repo to base 17.0.1 (#17) @killer0071234

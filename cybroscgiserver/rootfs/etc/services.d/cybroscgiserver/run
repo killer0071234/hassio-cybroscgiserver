@@ -3,7 +3,7 @@
 # Home Assistant Community Add-on: CybroScgiServer
 # Runs CybroScgiServer
 # ==============================================================================
-version=`sed -n 's/^APP_VERSION = //p' /usr/local/bin/scgi_server/src/constants.py`
+version=`sed -n 's/^APP_VERSION = //p' /usr/local/bin/scgi_server/scgi_server/constants.py`
 bashio::log.info "Starting CybroScgiServer $version..."
-cd /usr/local/bin/scgi_server/src
-exec python3 app.py
+cd /usr/local/bin/scgi_server
+exec python3 scgi_server/start.py

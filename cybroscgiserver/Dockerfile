@@ -9,7 +9,7 @@ ARG BUILD_ARCH=amd64
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Copy Python requirements file
-COPY rootfs/usr/local/bin/scgi_server/src/requirements.txt /tmp/
+COPY rootfs/usr/local/bin/scgi_server/requirements.txt /tmp/
 
 # Setup base
 # hadolint ignore=DL3003,DL3042,DL3018

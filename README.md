@@ -8,7 +8,7 @@ CybroScgiServer from ![Cybrotech][cybrotech].
 
 CybroScgiServer is a Scgi server to cummunicate to PLCs from Cybrotech / Robotina
 This add-on creates a supervisor add-on to run
-cybroscgiserver v3.1.3 from ![Cybrotech][cybrotech].
+cybroscgiserver v3.2.6 from ![Cybrotech][cybrotech].
 
 See ![repository readme][addon-repo-install] on how to install cybro addon in supervisor.
 
