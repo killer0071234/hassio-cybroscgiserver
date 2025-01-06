@@ -2,9 +2,10 @@
 
 # Changelog
 
-## [0.3.0] - 2025-01-06
+## [0.2.4] - 2025-01-06
 
-- Update repo to base 17.0.1 () @killer0071234
+- Update repo to base 17.0.1 (#17) @killer0071234
+- Update and simplified addon configuration (#18) @killer0071234
 
 ## [0.2.3] - 2024-10-10
 

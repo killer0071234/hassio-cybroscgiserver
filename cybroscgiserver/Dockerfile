@@ -26,6 +26,8 @@ RUN \
         py3-pip \
         python3 \
     \
+    && pip install iniparse \
+    && pip install crudini \
     && pip install -r /tmp/requirements.txt
 
 # Copy root filesystem
