@@ -2,6 +2,10 @@
 
 # Changelog
 
+## [0.3.0] - 2025-01-06
+
+- Update repo to base 17.0.1 () @killer0071234
+
 ## [0.2.3] - 2024-10-10
 
 - Update repo to base 16.3.2 (#13) @killer0071234
