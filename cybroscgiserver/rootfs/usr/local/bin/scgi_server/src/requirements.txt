@@ -1,4 +1,0 @@
-rx~=3.2.0
-aiomysql==0.2.0
-watchdog==5.0.3
-python-can~=4.4.2

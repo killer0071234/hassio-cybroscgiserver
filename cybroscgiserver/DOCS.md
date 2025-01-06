@@ -1,7 +1,7 @@
 # Home Assistant Community Add-on: Cybro Scgi Server
 
 Communication gateway between Home Assistant and cybro PLCs.
-Based on CybroScgiSerer v3.1.3.
+Based on CybroScgiSerer v3.2.6.
 
 ## Installation
 
