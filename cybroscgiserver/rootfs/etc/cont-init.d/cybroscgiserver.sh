@@ -44,12 +44,18 @@ else
     $crudini --set /usr/local/bin/scgi_server/config.ini ETH autodetect_enabled true
     if bashio::config.has_value "autodetect_address"; then autodetect_address=$(bashio::config 'autodetect_address'); else autodetect_address=""; fi
     bashio::log.info "autodetect_address: ${autodetect_address}"
-    $crudini --set /usr/local/bin/scgi_server/config.ini ETH autodetect_address $autodetect_address
+    $crudini --set /usr/local/bin/scgi_server/config.ini ETH autodetect_address "$autodetect_address"
 
     # push settings
     if bashio::config.true "push_enabled"; then push_enabled="true"; else push_enabled="false"; fi
     bashio::log.info "push_enabled: ${push_enabled}"
-    $crudini --set /usr/local/bin/scgi_server/config.ini PUSH enabled $push_enabled
+    $crudini --set /usr/local/bin/scgi_server/config.ini PUSH enabled "$push_enabled"
+
+    # verbose level
+    if bashio::config.has_value "verbose_level"; then verbose_level=$(bashio::config 'verbose_level'); else verbose_level="ERROR"; fi
+    bashio::log.info "configured verbose_level: ${verbose_level}"
+    $crudini --set /usr/local/bin/scgi_server/config.ini CACHE verbose_level "$verbose_level"
+
 
     # copy config file to addon config folder
     cp /usr/local/bin/scgi_server/config.ini "$(bashio::config 'configuration_file')"
