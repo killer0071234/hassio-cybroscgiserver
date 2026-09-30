@@ -1,9 +1,9 @@
 {
-  "name": "hassio devcontainer for add-on cybroscgiserver",
+  "name": "hassio devcontainer for app cybroscgiserver",
   "image": "ghcr.io/home-assistant/devcontainer:5-apps",
   "overrideCommand": false,
   "remoteUser": "vscode",
-  "appPort": ["7123:8123", "7357:4357", "4000:4000"],
+  "appPort": ["7123:80", "7357:4357", "4000:4000"],
   "postStartCommand": "bash devcontainer_bootstrap",
   "runArgs": ["-e", "GIT_EDITOR=code --wait", "--privileged"],
   "workspaceFolder": "/mnt/supervisor/apps/local/${localWorkspaceFolderBasename}",

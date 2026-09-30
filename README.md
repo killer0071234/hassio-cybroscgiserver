@@ -1,4 +1,4 @@
-# Home Assistant Community Add-on: CybroScgiServer
+# Home Assistant Community App: CybroScgiServer
 
 [![Release][release-shield]][release] ![Project Stage][project-stage-shield] ![Project Maintenance][maintenance-shield]
 
@@ -7,14 +7,17 @@ CybroScgiServer from ![Cybrotech][cybrotech].
 ## About
 
 CybroScgiServer is a Scgi server to communicate to PLCs from Cybrotech / Robotina
-This add-on creates a supervisor add-on to run
+This app runs
 cybroscgiserver v3.3.1 from ![Cybrotech][cybrotech].
 
-See ![repository readme][addon-repo-install] on how to install cybro addon in supervisor.
+See ![repository readme][addon-repo-install] on how to install the cybro app in Home Assistant.
 
 **If you have questions or feedback please**
 
 - via Issues and pull requests in the Github repository
+
+To start and debug the app during development, see the
+[contributing guide](.github/CONTRIBUTING.md#development).
 
 ![Supports aarch64 Architecture][aarch64-shield]
 ![Supports amd64 Architecture][amd64-shield]

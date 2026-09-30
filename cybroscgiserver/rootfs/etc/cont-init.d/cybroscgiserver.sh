@@ -1,6 +1,6 @@
 #!/command/with-contenv bashio
 # ==============================================================================
-# Home Assistant Community Add-on: CybroScgiServer
+# Home Assistant Community App: CybroScgiServer
 # Pre-run checks for CybroScgiServer
 # ==============================================================================
 declare configuration_file
@@ -12,13 +12,13 @@ declare verbose_level
 crudini="crudini"
 
 configuration_file=$(bashio::config 'configuration_file')
-# copy config from legacy config folder to addon config folder
+# copy config from legacy config folder to app config folder
 ha_config_file="${configuration_file/"/config"/"/homeassistant"}"
 if bashio::fs.file_exists "${ha_config_file}"; then
-    bashio::log.warning "Found addon config in:"
+    bashio::log.warning "Found app config in:"
     bashio::log.warning "${ha_config_file}"
     bashio::log.warning
-    bashio::log.warning "move config into addon config folder:"
+    bashio::log.warning "move config into app config folder:"
     bashio::log.warning "${configuration_file}"
     mv "${ha_config_file}" "${configuration_file}"
 fi
@@ -62,11 +62,11 @@ else
     $crudini --set /usr/local/bin/scgi_server/config.ini DEBUGLOG verbose_level "$verbose_level"
     # log goes to stdout already, the log file is not needed
     $crudini --set /usr/local/bin/scgi_server/config.ini DEBUGLOG log_to_file false
-    # older versions of this add-on wrote verbose_level into the wrong section
+    # older versions of this app wrote verbose_level into the wrong section
     $crudini --del /usr/local/bin/scgi_server/config.ini CACHE verbose_level
 
 
-    # copy config file to addon config folder
+    # copy config file to app config folder
     cp /usr/local/bin/scgi_server/config.ini "$(bashio::config 'configuration_file')"
     bashio::exit.ok
 fi
