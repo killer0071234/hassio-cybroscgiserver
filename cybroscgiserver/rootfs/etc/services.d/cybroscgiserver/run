@@ -3,7 +3,7 @@
 # Home Assistant Community Add-on: CybroScgiServer
 # Runs CybroScgiServer
 # ==============================================================================
-version=`sed -n 's/^APP_VERSION = //p' /usr/local/bin/scgi_server/scgi_server/constants.py`
+version=$(sed -n 's/^APP_VERSION = //p' /usr/local/bin/scgi_server/scgi_server/constants.py)
 bashio::log.info "Starting CybroScgiServer $version..."
-cd /usr/local/bin/scgi_server
+cd /usr/local/bin/scgi_server || bashio::exit.nok "Could not change to /usr/local/bin/scgi_server"
 exec python3 scgi_server/start.py
