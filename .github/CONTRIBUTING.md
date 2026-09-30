@@ -33,7 +33,9 @@ Even better: You could submit a pull request with a fix / new feature!
    devcontainer runs a full Home Assistant with the supervisor.
 1. Run the task **Start Home Assistant** (Terminal → Run Task). The first start
    takes a few minutes.
-1. Open <http://localhost:7123> and finish the onboarding.
+1. Open <http://localhost:7123> and finish the onboarding. Port 7123 is
+   forwarded to port 80, which Home Assistant uses by default under the
+   supervisor since 2026.9 (before, it was 8123).
 1. Go to **Settings → Apps → App store**. The app is listed under
    **Local apps**. Install and start it.
 1. After changing files, click **Rebuild** on the app page so the changes are
