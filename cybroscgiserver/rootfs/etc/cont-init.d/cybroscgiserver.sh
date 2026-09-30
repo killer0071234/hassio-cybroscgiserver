@@ -9,8 +9,7 @@ declare autodetect_address
 declare push_enabled
 declare verbose_level
 
-# set python crudini command
-crudini="python3 /usr/lib/python3.12/site-packages/crudini.py"
+crudini="crudini"
 
 configuration_file=$(bashio::config 'configuration_file')
 # copy config from legacy config folder to addon config folder
