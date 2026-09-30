@@ -1,0 +1,70 @@
+{% load static %}
+
+<div class="navig">
+    <div class="page_count">
+        <select class="page_index stop_refresh" title="Go to page">
+            {% for p in pages %}
+                <option value="{{ p }}"{% if p == page_index|add:1 %} selected="selected"{% endif %}>{{ p }}</option>
+            {% endfor %}
+        </select>
+        / {{ page_count|add:1 }}
+    </div>
+
+    <div class="filter_select">
+        <select class="filter_type filter stop_refresh" title="Filter by type">
+            <option value="all"{% if filter_type == "all" %} selected="selected"{% endif %}>alarms and events</option>
+            <option value="alarms"{% if filter_type == "alarms" %} selected="selected"{% endif %}>alarms</option>
+            <option value="events"{% if filter_type == "events" %} selected="selected"{% endif %}>events</option>
+        </select>
+    </div>
+
+    <div class="filter_select">
+        <select class="filter_activity filter stop_refresh" title="Filter by activity">
+            <option value="all"{% if filter_activity == "all" %} selected="selected"{% endif %}>all</option>
+            <option value="active"{% if filter_activity == "active" %} selected="selected"{% endif %}>active</option>
+            <option value="waiting_ack"{% if filter_activity == "waiting_ack" %} selected="selected"{% endif %}>not acknowledged</option>
+        </select>
+    </div>
+
+    {% if download_btn %}
+        <button class="button download_csv_data" style="margin-right: 10px;" rel="{{ page_index }}" title="Download data">Download</button>
+    {% endif %}
+    <button class="button{% if page_index == 0 %} disabled{% endif %} jump_to_page" rel="0" title="Go to recent">Recent</button>
+    <button class="button{% if not next_enabled %} disabled{% endif %} jump_to_page" rel="{{ next_page }}" title="Next">&lt;&lt;</button>
+    <button class="button{% if not prev_enabled %} disabled{% endif %} jump_to_page" rel="{{ prev_page }}" title="Previous">&gt;&gt;</button>
+</div>
+
+<table class="list" cellspacing="0">
+    <tr>
+        <th class="col_type">&nbsp;</th>
+        <th class="col_raised">Raised</th>
+        <th class="col_gone">Gone</th>
+        <th class="col_tag">Tag</th>
+        <th class="col_message">Message</th>
+        <th class="col_status">Status</th>
+        <th class="col_ack">Ack</th>
+    </tr>
+    {% for item in items %}
+        <tr class="hover_row{% if item.classes %} {{ item.classes }}{% endif %}">
+            <td class="col_type">
+                {% if item.type == 1 %}
+                    <img src="{% static 'img/ico_exclamation_red.png' %}" alt="alarm" title="alarm{% if item.alarm_class %} - {{ item.alarm_class }}{% endif %}" />
+                {% else %}
+                    <img src="{% static 'img/ico_exclamation.png' %}" alt="event" title="event{% if item.alarm_class %} - {{ item.alarm_class }}{% endif %}" />
+                {% endif %}
+            </td>
+            <td class="col_raised">{% if item.timestamp_raise %}{{ item.get_local_timestamp_raise|date:"Y-m-d H:i:s" }}{% else %}&nbsp;{% endif %}</td>
+            <td class="col_gone">{% if item.timestamp_gone %}{{ item.get_local_timestamp_gone|date:"Y-m-d H:i:s" }}{% else %}still active{% endif %}</td>
+            <td class="col_tag">{{ item.tag }}</td>
+            <td class="col_message">{{ item.message }}</td>
+            <td class="col_status {% if item.active %}active{% else %}gone{% endif %}">{% if item.active %}active{% else %}gone{% endif %}</td>
+            <td class="col_ack">
+                {% if item.ack_enabled %}
+                    <button class="button alarm_ack{% if not rw_access %} disabled{% endif %}" rel="{{ item.id }}" title="Acknowledge alarm">Acknowledge</button>
+                {% else %}
+                    {% if item.timestamp_ack %}{{ item.get_local_timestamp_ack|date:"Y-m-d H:i:s" }}{% else %}&nbsp;{% endif %}
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>

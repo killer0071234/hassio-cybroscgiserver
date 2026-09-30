@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /scgi/
+Disallow: /service/
+Disallow: /server_admin/

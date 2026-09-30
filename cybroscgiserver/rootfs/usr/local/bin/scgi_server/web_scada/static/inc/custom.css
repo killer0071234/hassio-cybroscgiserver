@@ -1,0 +1,23 @@
+.highslide img {
+    width: 168px;
+    height: 126px;
+    margin: 0;
+    padding: 5px;
+    background-color: #EFEFEF;
+    border: 1px solid #CFCFCF;
+    opacity: 0.5;
+    filter: alpha(opacity=100);
+}
+.highslide:hover img {
+    opacity: 1;
+    filter: alpha(opacity=100);
+}
+.highslide-controls {
+    position: static !important;
+    width: 165px;
+    height: 40px;
+    background: url(static/inc/js/highslide/graphics/controlbar-white.gif) 0 -90px no-repeat;
+}
+.highslide-controls .higslide-full-expand {
+    display: none;
+}

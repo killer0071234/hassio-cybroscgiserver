@@ -1,0 +1,15 @@
+input, textarea, select {
+    padding: 2px 3px 2px 3px;
+}
+
+.button {
+    padding: 0px 8px 0px 8px;
+    margin: 0px 2px 0px 2px;
+    line-height: 20px;
+    width:auto;
+    overflow:visible;
+}
+
+.cybro_alarm_list .list .button {
+    line-height: 16px;
+}

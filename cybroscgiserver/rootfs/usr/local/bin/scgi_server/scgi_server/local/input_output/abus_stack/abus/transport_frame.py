@@ -96,6 +96,9 @@ class TransportFrameUtil:
             header_bytes
         )
 
+        if signature != 0x55AA:
+            raise AbusError("Invalid signature")
+
         data_block_bytes_length = length - cls.TRANSACTION_ID_LENGTH
 
         if data_block_bytes_length > max_data_block_bytes_length:

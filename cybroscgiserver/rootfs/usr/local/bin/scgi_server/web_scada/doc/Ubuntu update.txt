@@ -1,0 +1,58 @@
+================================================================================
+                   CybroWebScada (c) 2010-2024 Cybrotech Ltd
+================================================================================
+
+This document describes how to update web scada application.
+
+YourServer - server with web scada installation which will be upgraded
+your PC - linux or windows PC which is used to prepare installation
+solar:solar - default username:password for web scada application
+
+- copy release files to app-new/ directory on your PC
+- use FTP to copy app/ directory from YourServer to app-old/ directory on your PC
+- copy or merge following configuration files from app-old/ to app-new/
+
+app/scgi_server/data_logger.xml
+app/scgi_server/scgi_server.ini
+app/scgi_server/src/sys_config.py
+
+app/web_scada/solar_cybro.wsgi
+app/web_scada/project/settings_local.py
+app/web_scada/project/template/server_admin/index.html
+
+app/web_scada/data/media/* (with all subdirectories)
+
+- use FTP to copy app-new/ directory from your PC to YourServer
+- use terminal to logon at YourServer as user:solar pass:solar
+- set file permissions
+
+chmod 664 app-new/scgi_server/data_logger.xml
+chmod 664 app-new/scgi_server/scgi_server.ini
+
+chmod 755 app-new/scgi_server/src/cybro_com_server.py
+chmod 755 app-new/scgi_server/src/cybro_scgi_server.py
+chmod 755 app-new/scgi_server/src/run_scgi_server.py
+
+chmod 755 app-new/web_scada/project/run_create_reports.py
+chmod 755 app-new/web_scada/project/run_send_reports.py
+
+setfacl -m u:www-data:--x $HOME
+setfacl -R -m u:www-data:--- $HOME/app-new/*
+setfacl -R -m u:www-data:rwx $HOME/app-new
+setfacl -R -m d:u:www-data:rwx $HOME/app-new
+chmod g+s $HOME/app-new
+setfacl -R -m d:u:solar:rwx $HOME/app-new
+
+- stop scgi_server
+- exchange old and new app directories
+
+mv app/ app-old/
+mv app-new/ app/
+
+- start scgi_server
+
+app/scgi_server/start.py
+
+- restart apache
+
+sudo service apache2 restart

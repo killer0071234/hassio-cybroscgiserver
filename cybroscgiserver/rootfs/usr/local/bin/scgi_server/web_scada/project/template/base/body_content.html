@@ -1,0 +1,189 @@
+{% extends "base/base.html" %}
+{% load render_tree %}
+{% load static %}
+{% block body_content %}
+<div id="wrapper">
+    <div id="head">
+        <div class="content">
+            <div class="col_one">
+                <div class="logo"></div>
+            </div>
+            <div class="col_two">
+                <div id="top_menu">
+                    <a href="/">home</a>
+                    <a href="{{ get_contact_email }}">contact</a>
+                    {% if request.user.is_authenticated %}
+                    <a href="/signout/">log out</a>
+                    {% endif %}
+                </div>
+                <div id="login">
+                {% if request.user.is_anonymous %}
+                    <form method="post" id="fm_login" action="#">
+                        <div>
+                            user name: <input type="text" name="username" id="username" class="input" style="vertical-align: middle;" />
+                        </div>
+                        <div style="margin-top: 5px; margin-bottom: 5px;">
+                            password: <input type="password" name="password" id="password" class="input" style="vertical-align: middle;" />
+                        </div>
+                        <div>
+                            <span id="login_error" class="err" style="margin-right: 10px; display: none;">Invalid username or password!</span>
+                            <button class="button" id="btn_login"> Log in </button>
+                            <img src="{% static 'img/ajax_wait_blue.gif' %}" id="login_ajax_wait" style="display: none" alt=""/>
+                        </div>
+                    </form>
+                {% else %}
+                    logged as <a href="/profile/edit/">{{ request.user.format_name }}</a>
+                {% endif %}
+                </div>
+            </div>
+            <div class="cleaner">&nbsp;</div>
+        </div>
+    </div>
+
+    <div id="container">
+        <div id="content">
+            <div id="col_one">
+                <div class="menu">
+                    {% if request.user.is_authenticated %}
+                        {% if current_page %}
+                            {{ request.user.id|render_menu_tree:current_page.id|safe }}
+                        {% else %}
+                            {{ request.user.id|render_menu_tree:0|safe }}
+                        {% endif %}
+                    {% else %}
+                        {% if current_page %}
+                            {{ 0|render_menu_tree:current_page.id|safe }}
+                        {% else %}
+                            {{ 0|render_menu_tree:0|safe }}
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                {% if request.user.is_authenticated %}
+                    <div class="menu">
+                        <h3>User menu</h3>
+                        <ul>
+                            {% if request.user.permissions.can_manage_users %}
+                            <li>
+                                <a href="/user/list/"{% if active_menu == "users" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_users.png' %}" class="ico" alt="" />
+                                    Users
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if request.user.permissions.can_manage_controllers %}
+                            <li>
+                                <a href="/controller/list/"{% if active_menu == "controllers" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_uitab.png' %}" class="ico" alt="" />
+                                    Controllers
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if request.user.permissions.can_manage_templates %}
+                            <li>
+                                <a href="/template/list/"{% if active_menu == "templates" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_scripts_pencil.png' %}" class="ico" alt="" />
+                                    Templates
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if request.user.permissions.can_manage_media %}
+                            <li>
+                                <a href="/mmanager/list/"{% if active_menu == "mmanager" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_pictures.png' %}" class="ico" alt="" />
+                                    Media manager
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if request.user.permissions.can_manage_site_content %}
+                            <li>
+                                <a href="/page/site_list/"{% if active_menu == "site_content" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_documents_pencil.png' %}" class="ico" alt="" />
+                                    Site content
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if request.user.permissions.can_manage_plants or request.user.is_any_plant_admin %}
+                            <li>
+                                <a href="/plant/list/"{% if active_menu == "plants" %} class="active"{% endif %}>
+                                    <img src="{% static 'img/ico_lightning.png' %}" class="ico" alt="" />
+                                    Plants
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% if page_edit_link %}
+                            <li>
+                                <a href="{{ page_edit_link }}">
+                                    <img src="{% static 'img/ico_document_pencil.png' %}" class="ico" alt="" />
+                                    Edit current page
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            <li>
+                                <a href="/signout/">
+                                    <img src="{% static 'img/ico_signout.png' %}" class="ico" alt="" />
+                                    Log out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="col_two">
+                <div id="main_content">
+                    {% block main_content %}{% endblock %}
+                    {% block page_content %}{% endblock %}
+                </div>
+            </div>
+            <div class="cleaner">&nbsp;</div>
+        </div>
+    </div>
+
+    <div class="push"></div>
+</div>
+
+<div id="footer">
+    <p>{{ get_footer_text|safe }}</p>
+</div>
+
+<script type="text/javascript">
+$(function() {
+    {% if request.user.is_anonymous %}
+    $("#btn_login").click(function() {
+        let btn = $("#btn_login");
+        let img = $("#login_ajax_wait");
+        $(btn).hide();
+        $(img).show();
+        $("#login_error").hide();
+
+        $.post(
+            "/service/check_username_password/",
+            $("#fm_login").serialize(),
+            function(data) {
+                $(btn).css("display", "");
+                $(img).css("display", "none");
+
+                if (data === "1") {
+                    window.location.reload();
+                } else {
+                    $("#login_error").show();
+                }
+            }
+        );
+
+        return false;
+    });
+    {% endif %}
+
+    attach_common_jq_events();
+});
+</script>
+{% endblock %}

@@ -1,23 +1,22 @@
 from asyncio import AbstractEventLoop
 from typing import Optional
 
-from scgi_server import CONFIG_FILE
 from lib.general.conditional_logger import get_logger
 from lib.general.file_watcher import FileWatcher
 from lib.general.paths import APP_DIR
 from lib.services.alias_service import AliasService
 from lib.services.cpu_intensive_task_runner import \
     CPUIntensiveTaskRunner
+from scgi_server import CONFIG_FILE
 from scgi_server.local.bootstrap import Bootstrap
-from scgi_server.local.config.config.config import Config
+from scgi_server.local.config.config import Config
 from scgi_server.local.data_logger.data_logger_cache import DataLoggerCache
 from scgi_server.local.general.logger_names import LoggerNames
+from scgi_server.local.general.transaction_id_generator import \
+    TransactionIdGeneratorType, \
+    transaction_id_generator
 from scgi_server.local.input_output.abus_stack.abus.abus_transceiver import \
     AbusTransceiver
-from scgi_server.local.input_output.abus_stack.can_protocol.can_transceiver \
-    import CanTransceiver
-from scgi_server.local.input_output.abus_stack.can_protocol.iex_transceiver \
-    import IexTransceiver
 from scgi_server.local.input_output.abus_stack.router import Router
 from scgi_server.local.input_output.abus_stack.udp.udp_activity_service \
     import UdpActivityService
@@ -59,6 +58,7 @@ from scgi_server.local.services.status_services.system_status_service import \
     SystemStatusService
 
 
+# noinspection PyTypeChecker
 class Container:
     def __init__(self,
                  config: Config,
@@ -95,8 +95,6 @@ class Container:
         self._router: Optional[Router] = None
         self._abus_transceiver: Optional[AbusTransceiver] = None
         self._udp_transceiver: Optional[UdpTransceiver] = None
-        self._can_transceiver: Optional[CanTransceiver] = None
-        self._iex_transceiver: Optional[IexTransceiver] = None
         self._scgi_server: Optional[ScgiServer] = None
         self._tcp_server: Optional[TCPServer] = None
         self._file_watcher: Optional[FileWatcher] = None
@@ -104,6 +102,9 @@ class Container:
         self._cpu_intensive_task_runner: Optional[CPUIntensiveTaskRunner] = None
         self._plc_info_cleaner: Optional[PlcInfoCleaner] = None
         self._socket_service: Optional[SocketService] = None
+        self._transaction_id_generator: (
+            Optional[TransactionIdGeneratorType]
+        ) = None
 
     @property
     def cpu_intensive_task_runner(self) -> CPUIntensiveTaskRunner:
@@ -116,7 +117,6 @@ class Container:
     def alias_service(self) -> AliasService:
         if self._alias_service is None:
             self._alias_service = AliasService(
-                get_logger(LoggerNames.ALIAS_SERVICE.name),
                 self.config.alias_config.aliases,
                 self.config.alias_config.reversed
             )
@@ -156,11 +156,10 @@ class Container:
     def file_watcher(self) -> FileWatcher:
         if self._file_watcher is None:
             log = get_logger(LoggerNames.FILE_WATCHER.name)
+
             self._file_watcher = FileWatcher(
-                self.main_loop,
-                log,
-                APP_DIR,
-                {CONFIG_FILE: lambda: FileWatcher.restart(log)}
+                CONFIG_FILE,
+                lambda: FileWatcher.restart(log)
             )
 
         return self._file_watcher
@@ -256,10 +255,9 @@ class Container:
             self._detection_service = PlcDetectionService(
                 get_logger(LoggerNames.PLC_DETECT.name),
                 self.plc_info_service,
-                self.config.eth_config.enabled,
                 self.config.eth_config.autodetect_enabled,
                 self.config.eth_config.autodetect_address,
-                self.config.can_config.enabled
+                self.trans_id_generator
             )
 
         return self._detection_service
@@ -272,7 +270,8 @@ class Container:
                 self.main_loop,
                 self.plc_info_service,
                 self.plc_activity_service,
-                self.push_activity_service
+                self.push_activity_service,
+                self.trans_id_generator
             )
 
         return self._push_service
@@ -287,7 +286,8 @@ class Container:
                 self.plc_info_service,
                 self.plc_activity_service,
                 self.detection_service,
-                self.cpu_intensive_task_runner
+                self.cpu_intensive_task_runner,
+                self.trans_id_generator
             )
 
         return self._plc_client_manager
@@ -320,7 +320,8 @@ class Container:
                 self.plc_cache,
                 self.data_logger_cache,
                 self.cpu_intensive_task_runner,
-                self.config.scgi_config.only_user_variables
+                self.config.scgi_config.only_user_variables,
+                self.main_loop
             )
 
         return self._plc_communication_service
@@ -359,9 +360,7 @@ class Container:
         if self._abus_transceiver is None:
             self._abus_transceiver = AbusTransceiver(
                 get_logger(LoggerNames.ABUS.name),
-                self.router,
-                self.config.can_config.enabled,
-                self.config.eth_config.enabled
+                self.router
             )
 
         return self._abus_transceiver
@@ -371,7 +370,6 @@ class Container:
         if self._udp_transceiver is None:
             self._udp_transceiver = UdpTransceiver(
                 get_logger(LoggerNames.UDP.name),
-                self.main_loop,
                 self.communication_loop,
                 self.abus_transceiver,
                 self.udp_activity_service,
@@ -380,30 +378,6 @@ class Container:
             )
 
         return self._udp_transceiver
-
-    @property
-    def can_transceiver(self) -> CanTransceiver:
-        if self._can_transceiver is None:
-            self._can_transceiver = CanTransceiver(
-                self.communication_loop,
-                get_logger(LoggerNames.CAN.name),
-                self.iex_transceiver,
-                self.config.can_config.interface,
-                self.config.can_config.channel,
-                self.config.can_config.bitrate
-            )
-
-        return self._can_transceiver
-
-    @property
-    def iex_transceiver(self) -> IexTransceiver:
-        if self._iex_transceiver is None:
-            self._iex_transceiver = IexTransceiver(
-                get_logger(LoggerNames.CAN.name),
-                self.abus_transceiver
-            )
-
-        return self._iex_transceiver
 
     # region SCGI
     @property
@@ -442,6 +416,7 @@ class Container:
         if self._plc_info_cleaner is None:
             self._plc_info_cleaner = PlcInfoCleaner(
                 get_logger(LoggerNames.PLC_INFO.name),
+                self.main_loop,
                 self.plc_info_service
             )
 
@@ -471,12 +446,18 @@ class Container:
                 self.plc_client_manager,
                 self.alc_service,
                 self.udp_transceiver,
-                self.can_transceiver,
                 self.tcp_server,
                 self.plc_info_cleaner,
                 self.file_watcher,
-                self.config.eth_config.enabled,
-                self.config.can_config.enabled
             )
 
         return self._scgi_server_bootstrap
+
+    @property
+    def trans_id_generator(self) -> TransactionIdGeneratorType:
+        if self._transaction_id_generator is None:
+            self._transaction_id_generator = transaction_id_generator(
+                0, 0xFFFF
+            )
+
+        return self._transaction_id_generator

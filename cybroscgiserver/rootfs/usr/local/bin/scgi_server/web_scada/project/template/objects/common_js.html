@@ -1,0 +1,113 @@
+{{ js_includes|safe }}
+
+<script type="text/javascript">
+    let skup_update = false;
+    let write_delay = 500;
+    let write_queue = [];
+    let write_pending = false;
+    let write_delay_timer = null;
+    let read_req_timer = null;
+    let plant_id = {% if plant %}{{ plant.id }}{% else %}0{% endif %};
+
+    function DoTagWrite()
+    {
+        let tags = [];
+
+        for (var key in write_queue)
+            tags.push(key + "=" + write_queue[key]);
+
+        write_queue = [];
+
+        $.get(
+            "/scgi/?" + tags.join("&") + "&" + Math.random(),
+            function(data)
+            {
+                SendUpdateRequest();
+                skup_update = false;
+            }
+        );
+    }
+
+    function SetTagValue(cybro_var, value)
+    {
+        if (read_req_timer != null) {
+            clearTimeout(read_req_timer);
+        }
+
+        write_queue[cybro_var] = value;
+
+        if (write_delay_timer != null) {
+            clearTimeout(write_delay_timer);
+        }
+
+        write_delay_timer = setTimeout(DoTagWrite, write_delay);
+    }
+
+    function GetObjectProperties(id)
+    {
+        let prop = {};
+
+        $("#" + id + " [type='hidden']").each(function(i) {
+            prop[$(this).attr("name")] = $(this).attr("value");
+        });
+
+        return prop;
+    }
+
+    function SetObjectTitle(object, tag_name, description)
+    {
+        $(object).attr("title", description != null && description.length !== 0 ? tag_name + " - " + description : tag_name);
+    }
+
+    {{ tag_update_func|safe }}
+
+    function SendUpdateRequest()
+    {
+        {% if live %}
+        if (read_req_timer != null) {
+            clearTimeout(read_req_timer);
+        }
+
+        {% if request_url %}
+        let post_data = {
+            "url": "{{ request_url|safe }}"
+        };
+
+        $.post(
+            "/scgi/?" + Math.random(),
+            post_data,
+            function(xml)
+            {
+                let vars = [];
+                let descriptions = [];
+
+                $("var", xml).each(function(i) {
+                    let name = $(this).find("name").text();
+                    vars[name] = $(this).find("value").text();
+                    descriptions[name] = $(this).find("description").text();
+                });
+
+                {{ tag_update_code|safe }}
+
+                $("#heartbeat").fadeIn(50).delay(300).fadeOut(500);
+                read_req_timer = setTimeout("SendUpdateRequest()", {{ update_period }});
+            }
+        );
+        {% else %}
+            {{ tag_update_code|safe }}
+
+            $("#heartbeat").fadeIn(50).delay(300).fadeOut(500);
+            read_req_timer = setTimeout("SendUpdateRequest()", {{ update_period }});
+        {% endif %}
+        {% endif %}
+    }
+
+    $(function() {
+        {{ init_jq_binding|safe }}
+        {{ page_load_init|safe }}
+
+        {% if live %}
+            SendUpdateRequest();
+        {% endif %}
+    });
+</script>

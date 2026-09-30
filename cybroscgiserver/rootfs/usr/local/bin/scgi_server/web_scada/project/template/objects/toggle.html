@@ -1,0 +1,75 @@
+{% if code == "html" %}
+<span id="{{ id }}" class="cybro_{{ type }}">
+    <input type="text" class="value" readonly="readonly" value="" size="{{ digits }}" style="background: {{ color }};"/>
+    <button class="button{% if not rw_access %} disabled{% endif %}">×</button>
+    <input type="hidden" name="tag" value="{{ var }}" />
+    <input type="hidden" name="curr_index" value="{{ value_count|add:"-1" }}" />
+    <input type="hidden" name="max_index" value="{{ value_count|add:"-1" }}" />
+    {% for val in values %}
+        <input type="hidden" name="value_{{ forloop.counter0 }}" value="{{ val }}" />
+    {% endfor %}
+</span>
+
+{% elif code == "tag_update_func" %}
+function UpdateToggle(object_id, tag_name, description, value, values)
+{
+    if (!skup_update) {
+        if (isNaN(value)) {
+            value = "?";
+        } else {
+            const val = parseFloat(value);
+            let valIndex = 0;
+            for (let i = 0; i < values.length; i++) {
+                valIndex = i;
+                if (values[i] > val) {
+                    break;
+                }
+            }
+            if (valIndex < values.length) {
+                if (values[valIndex] <= val) {
+                    valIndex++;
+                }
+            }
+
+            $("#" + object_id + " > input[name=\"curr_index\"]").val(valIndex);
+        }
+        $("#" + object_id + " > .value").val(value).removeClass("active");
+        SetObjectTitle($("#" + object_id + " > .value"), tag_name, description);
+    }
+}
+
+function ToggleValue(object_id, cybro_var, curr_index, max_index)
+{
+    {% if rw_access %}
+    skup_update = true;
+
+    let next_index = curr_index + 1;
+    if (next_index > max_index) {
+        next_index = 0;
+    }
+
+    const value = GetObjectProperties(object_id)["value_" + next_index];
+    $("#" + object_id + " > input[name=\"curr_index\"]").val(next_index);
+
+    if (!isNaN(value)) {
+        SetTagValue(cybro_var, value);
+        $("#" + object_id + " > .value").val(value).addClass("active");
+    }
+    {% endif %}
+}
+
+
+{% elif code == "tag_update_code" %}
+UpdateToggle("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], {{ change_values|safe }});
+
+
+{% elif code == "init_jq_binding" %}
+$(".cybro_{{ type }} > button").click(function() {
+    const parent = $(this).parent();
+    const id = $(parent).attr("id");
+    const prop = GetObjectProperties(id);
+    ToggleValue(id, prop["tag"], parseInt(prop["curr_index"]), parseInt(prop["max_index"]));
+    return false;
+});
+
+{% endif %}

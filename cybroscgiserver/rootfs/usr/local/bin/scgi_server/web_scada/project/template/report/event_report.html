@@ -1,0 +1,21 @@
+<table>
+	<tr>
+		<th class="title" colspan=6>Event report for plant {{ plant.name }} from {{ event_report.get_local_timestamp_from|date:"d.m.Y H:i:s" }} to {{ event_report.get_local_timestamp_to|date:"d.m.Y H:i:s" }}</th>
+	</tr>
+	<tr>
+		<th>Raised</th>
+		<th>Gone</th>
+		<th>Tag</th>
+		<th>Message</th>
+		<th>Change</th>
+	</tr>
+	{% for alarm in event_report.alarms %}
+	<tr>
+		<td>{% if alarm.timestamp_raise %}{{ alarm.get_local_timestamp_raise|date:"d.m.Y H:i:s" }}{% else %}&nbsp;{% endif %}</td>
+		<td>{% if alarm.timestamp_gone %}{{ alarm.get_local_timestamp_gone|date:"d.m.Y H:i:s" }}{% else %}still active{% endif %}</td>
+		<td>{{ alarm.tag }}</td>
+		<td>{{ alarm.message }}</td>
+		<td>{{ alarm.get_changes }}</td>
+	</tr>
+	{% endfor %}
+</table>

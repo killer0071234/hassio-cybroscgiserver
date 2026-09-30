@@ -1,20 +1,19 @@
 import asyncio
-from dataclasses import dataclass
 from itertools import chain
 from typing import Callable, List, Tuple, Dict, Union
 
-from lib.input_output.scgi.r_var_response import RVarResponse
 from lib.input_output.scgi.r_response import RResponse
-from local.services.rw_service.subservices.plc_comm_service.alc_service.var_info import \
-    VarInfo
+from lib.input_output.scgi.r_var_response import RVarResponse
 from scgi_server.local.services.rw_service.scgi_communication.rw_request \
     import RWRequest
 from scgi_server.local.services.rw_service.subservices.plc_activity_service \
     .plc_activity import PlcActivity
+from scgi_server.local.services.rw_service.subservices. \
+    plc_comm_service.alc_service.var_info import VarInfo
 from scgi_server.local.services.status_services.plc_status_service \
     .plc_status_service import PlcStatusService
-from scgi_server.local.services.status_services.plc_status_service.single_plc_status_service import \
-    SinglePlcStatusService
+from scgi_server.local.services.status_services.plc_status_service \
+    .single_plc_status_service import SinglePlcStatusService
 
 
 class PlcStatusServiceFacade:

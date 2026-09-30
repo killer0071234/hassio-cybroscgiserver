@@ -1,0 +1,13 @@
+{% load static %}
+<tr class="hover_row controller_item" id="controller_item_{{ c.id }}" rel="{{ c.id }}">
+    <td class="col1">{{ c.nad }}</td>
+    <td>{% if c.owner %}{{ c.owner.format_name }}{% else %}-{% endif %}</td>
+    <td>{{ c.location }}</td>
+    <td class="col4">
+        {% if c.owner == request.user or request.user.permissions.is_server_admin %}
+        <a href="#" class="delete_controller" rel="{{ c.id }}" name="{{ c.location }}">
+            <img src="{% static 'img/ico_minus.png' %}" alt="" title="delete" />
+        </a>
+        {% endif %}
+    </td>
+</tr>

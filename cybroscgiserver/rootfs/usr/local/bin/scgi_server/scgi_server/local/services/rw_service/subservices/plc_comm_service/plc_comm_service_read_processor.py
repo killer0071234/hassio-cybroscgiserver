@@ -6,11 +6,11 @@ from lib.general.conditional_logger import ConditionalLogger
 from lib.input_output.scgi.r_response import RResponse
 from lib.services.cpu_intensive_task_runner import \
     CPUIntensiveTaskRunner
-from local.services.rw_service.subservices.plc_comm_service.data_type import \
-    DataType
 from scgi_server.local.general.errors import ExchangerTimeoutError
 from scgi_server.local.input_output.abus_stack.abus.command_frame import \
     CommandFrame
+from scgi_server.local.services.rw_service.subservices.plc_comm_service \
+    .data_type import DataType
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
     .plc_client_manager.plc_client.plc_client import PlcClient
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \

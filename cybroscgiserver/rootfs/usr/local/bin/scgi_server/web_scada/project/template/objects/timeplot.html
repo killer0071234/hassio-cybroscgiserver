@@ -1,0 +1,876 @@
+{% load static %}
+
+{% if code == "js_includes" %}
+<script src="{% static 'inc/js/flot-4.2.6/jquery.flot.js' %}" type="text/javascript"></script>
+
+{% elif code == "html" %}
+<div id="{{ id }}" class="cybro_{{ type }}" {% if not fullscreen %}style="width: {{ width }}px;"{% endif %}>
+    {% if not fullscreen %}
+    <div class="cmd">
+        <div class="period_selection">
+            <select class="period" title="Select period">
+                {% if select_quarter %}
+                    <option value="quarter"{% if span == "quarter" %} selected="selected"{% endif %}>15min</option>
+                {% endif %}
+                {% if select_hours %}
+                    <option value="hour"{% if span == "hour" %} selected="selected"{% endif %}>hour</option>
+                {% endif %}
+                {% if select_days %}
+                    <option value="day"{% if span == "day" %} selected="selected"{% endif %}>day</option>
+                {% endif %}
+                {% if select_months %}
+                    <option value="month"{% if span == "month" %} selected="selected"{% endif %}>month</option>
+                {% endif %}
+                {% if select_years %}
+                    <option value="year"{% if span == "year" %} selected="selected"{% endif %}>year</option>
+                {% endif %}
+            </select>
+
+            <select class="spancount timeplot_trigger" style="margin-right: 10px;" title="Select period span">
+            </select>
+
+            <select class="year timeplot_trigger" title="Select year" {% if timeskip != "1" %}disabled="disabled"{% endif %}>
+                {% for i in years %}
+                    <option value="{{ i }}"{% if i == default_year %} selected="selected"{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="month" title="Select month" {% if timeskip != "1" %}disabled="disabled"{% endif %}>
+                {% for i in months %}
+                    <option value="{{ i }}"{% if i == default_month %} selected="selected"{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="day timeplot_trigger" title="Select day" {% if timeskip != "1" %}disabled="disabled"{% endif %}>
+                {% for i in days %}
+                    <option value="{{ i }}"{% if i == default_day %} selected="selected"{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="hour timeplot_trigger" title="Select hour" {% if timeskip != "1" %}disabled="disabled"{% endif %}>
+                {% for i in hours %}
+                    <option value="{{ forloop.counter0 }}"{% if forloop.counter0 == default_hour %} selected="selected"{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="quarter timeplot_trigger" title="Select quarter hour" {% if timeskip != "1" %}disabled="disabled"{% endif %}>
+            {% for i in quarter %}
+                <option value="{{ forloop.counter0 }}"{% if forloop.counter0 == default_quarter %} selected="selected"{% endif %}>{{ i }}</option>
+            {% endfor %}
+            </select>
+
+            {% if timeskip == "1" %}
+                <button class="button prev" style="margin-left: 10px;" title="Previous">&lt;&lt;</button>
+                <button class="button next" title="Next">&gt;&gt;</button>
+                <button class="button now" title="Now">Now</button>
+            {% endif %}
+            <button class="button timeplot_fullscreen" title="Full screen"><img src="{% static 'img/ico_application-resize-full.png' %}" alt=""/></button>
+        </div>
+
+        {% if download == "1" %}
+        <div class="download">
+            <button class="button download_csv_data" title="Download data">Download</button>
+        </div>
+        {% endif %}
+
+        <div class="cleaner">&nbsp;</div>
+    </div>
+    {% endif %}
+
+    <div class="loading" style="display: none;">
+        Loading... <img src="{% static 'img/ajax_loader.gif' %}" alt="" />
+    </div>
+
+    <div class="graph" style="height: {{ height }}px;">&nbsp;</div>
+
+    {% if fullscreen %}
+    <div class="fullscreen_close_container">
+        <button class="button fullscreen_close">Close window</button>
+    </div>
+    {% endif %}
+
+    <input type="hidden" name="id" value="{{ id }}" />
+    <input type="hidden" name="graphstyle" value="{{ graphstyle }}" />
+    <input type="hidden" name="tag_count" value="{{ value_count }}" />
+    {% for tag in tags %}
+    <input type="hidden" name="tag_{{ forloop.counter0 }}" value="{{ tag }}" />
+    {% endfor %}
+    <input type="hidden" name="min" value="{{ min }}" />
+    <input type="hidden" name="max" value="{{ max }}" />
+    {% for color in colors %}
+    <input type="hidden" name="color_{{ forloop.counter0 }}" value="{{ color }}" />
+    {% endfor %}
+    {% for legendlabel in legendlabels %}
+    <input type="hidden" name="legendlabel_{{ forloop.counter0 }}" value="{{ legendlabel }}" />
+    {% endfor %}
+    <input type="hidden" name="legendunit" value="{{ legendunit }}" />
+    <input type="hidden" name="showlegend" value="{{ showlegend }}" />
+    <input type="hidden" name="decimals" value="{{ decimals }}" />
+
+    <input type="hidden" name="span" value="{{ span }}" />
+    <input type="hidden" name="spancount" value="{{ spancount }}" />
+    <input type="hidden" name="spanmin" value="{{ spanmin }}" />
+    <input type="hidden" name="spanmax" value="{{ spanmax }}" />
+    <input type="hidden" name="datetime" value="{{ datetime }}" />
+    <input type="hidden" name="timeskip" value="{{ timeskip }}" />
+    <input type="hidden" name="cumulative" value="{{ cumulative }}" />
+    <input type="hidden" name="resolution" value="{{ resolution }}" />
+
+    <input type="hidden" name="initialized" value="0" />
+</div>
+
+{% elif code == "tag_update_func" %}
+let updateLegendTimeout = null;
+let latestPosition = null;
+let timeplots = [];
+let previousPoint = null;
+
+function showTooltip(x, y, contents) {
+    $('<div id="tooltip">' + contents + '</div>').css({
+        position: 'absolute',
+        display: 'none',
+        top: y + 5,
+        left: x + 5,
+        border: '1px solid #fdd',
+        padding: '2px',
+        'background-color': '#fee',
+        opacity: 0.80
+    }).appendTo("body").fadeIn(200);
+}
+
+
+function calc_timeplot_resolution(id, period, month, year)
+{
+    switch(period)  {
+        case "quarter":
+            return 6;
+        case "hour":
+            return 6;
+        case "day":
+            return 24
+        case "month":
+            return daysInMonth(month, year);
+        case "year":
+            return 12;
+    }
+}
+
+function daysInMonth(iMonth, iYear)
+{
+    return 32 - new Date(iYear, iMonth - 1, 32).getDate();
+}
+
+function daysInYear(iYear)
+{
+    return new Date(iYear, 1, 29).getDate() === 29 ? 366 : 365;
+}
+
+function zeropad(value)
+{
+    return value < 10 ? "0" + value.toString() : value.toString();
+}
+
+function UpdateTimeplot(id, spancnt)
+{
+    $("#" + id + " .loading").show();
+
+    let prop = GetObjectProperties(id);
+
+    {% if fullscreen %}
+    let period = window.opener.jQuery("#{{ timeplot_id }} .period").val();
+    let spancount = window.opener.jQuery("#{{ timeplot_id }} .spancount").val();
+    let quarter = parseInt(window.opener.jQuery("#{{ timeplot_id }} .quarter").val());
+    let hour = parseInt(window.opener.jQuery("#{{ timeplot_id }} .hour").val());
+    let day = window.opener.jQuery("#{{ timeplot_id }} .day").val();
+    let month = parseInt(window.opener.jQuery("#{{ timeplot_id }} .month").val());
+    let year = parseInt(window.opener.jQuery("#{{ timeplot_id }} .year").val());
+    let cumulative = window.opener.jQuery("#{{ timeplot_id }} [name='cumulative']").val();
+    let resolution = window.opener.jQuery("#{{ timeplot_id }} [name='resolution']").val();
+    {% else %}
+    let period = $("#" + id + " .period").val();
+    let spancount = isNaN(spancnt) ? parseInt($("#" + id + " .spancount").val()) : null;
+    let quarter = parseInt($("#" + id + " .quarter").val());
+    let hour = parseInt($("#" + id + " .hour").val());
+    let day = parseInt($("#" + id + " .day").val());
+    let month = parseInt($("#" + id + " .month").val());
+    let year = parseInt($("#" + id + " .year").val());
+    let cumulative = prop["cumulative"];
+    let resolution = prop["resolution"];
+    {% endif %}
+
+    if (resolution === undefined) {
+        return;
+    }
+
+    if (resolution.length === 0) {
+        resolution = calc_timeplot_resolution(id, period, month, year);
+    }
+
+    const start = year + ":" + month + ":" + day + ":" + hour + ":" + (quarter * 15);
+
+    let req = [];
+    const decimals = parseInt(prop["decimals"]);
+    const tag_count = parseInt(prop["tag_count"]);
+
+    for (let i = 0; i < tag_count; i++) {
+        let params = [];
+        params.push("i=" + i);
+        params.push("t=" + prop["tag_" + i]);
+        params.push("p=" + period);
+        params.push("s=" + start);
+        params.push("sc=" + spancount);
+        params.push("cum=" + cumulative);
+        params.push("res=" + resolution);
+
+        const re = new RegExp(".*/(\\d+)/?$");
+        const match = re.exec(window.location.pathname);
+        const plant_homepage = match[1];
+
+        params.push("page="+ plant_homepage);
+
+        req.push(params.join(","));
+    }
+
+    $.get(
+        "/service/get_timeplot_data/" + req.join(";") + "/?rand=" + new Date().getTime(),
+        function(data)
+        {
+            let series_data = [];
+            let bar_width = 1;
+            data = data.split("\n");
+
+            for (let i = 0; i < data.length; i++)
+            {
+                let d;
+                let series_label = "";
+
+                if (data[i].length !== 0) {
+                    try {
+                        d = JSON.parse(data[i]);
+                    } catch (err) {
+                        d = [];
+                    }
+                }
+                else {
+                    d = [];
+                }
+
+                if (cumulative === "1") {
+                    let last_value = d.length > 0 ?
+                        (d[d.length - 1][1] / Math.pow(10, decimals)).toFixed(decimals) :
+                        "?";
+                    series_label = (
+                        prop["legendlabel_" + i] != null && prop["legendlabel_" + i].length > 0 ?
+                            prop["legendlabel_" + i] :
+                            prop["tag_" + i]
+                    ) + " = " + last_value;
+                }
+                else {
+                    let last_value = d.length > 0 ?
+                        (d[d.length - 1][1] / Math.pow(10, decimals)).toFixed(decimals) :
+                        "?";
+                    series_label = (
+                        prop["legendlabel_" + i] != null && prop["legendlabel_" + i].length > 0 ?
+                            prop["legendlabel_" + i] :
+                            prop["tag_" + i]
+                    ) + " = " + last_value;
+                }
+
+                const color = prop["color_" + i] != null && prop["color_" + i].length !== 0 ?
+                    prop["color_" + i] :
+                    null;
+
+                if (decimals !== 0)  {
+                    for (let n = 0; n < d.length; n++) {
+                        d[n][1] = d[n][1] / Math.pow(10, decimals);
+                    }
+                }
+
+                series_data.push({
+                    color: color,
+                    data: d,
+                    label: series_label
+                });
+            }
+
+            let ticks = [];
+            let markings = [];
+            let show_points = false;
+            let x_min = 0;
+            let x_max = 0;
+            let y_min = isNaN(parseInt(prop["min"])) ? null : prop["min"];
+            let y_max = isNaN(parseInt(prop["max"])) ? null : prop["max"];
+
+            {# generates labels for x axis aka ticks #}
+            switch(period) {
+                {# minutes in quarter #}
+                case "quarter":
+                    for (let q = 0; q <= spancount; q++) {
+                        if (spancount <= 2) {
+                            for (let m = 0; m <= 15; m += 1) {
+                                const hh = parseInt(hour + q * .25 + quarter * .25) % 24;
+                                const mm = (m + q * 15 + quarter * 15) % 60;
+                                ticks.push([q * 15 + m, zeropad(hh) + ":" + zeropad(mm)]);
+                            }
+                        } else if (spancount == 4) {
+                            for (let m = 0; m <= 60; m += 1) {
+                                const hh = parseInt(hour + parseInt((m + q * 15 + quarter * 15) / 60) + q * 0.25) % 24;
+                                const mm = (m + q * 15 + quarter * 15) % 60;
+                                ticks.push([q * 15 + m, zeropad(hh) + ":" + zeropad(mm)]);
+                            }
+                        } else if (spancount < 96) {
+                            const hh = parseInt(hour + q * .25 + quarter * .25) % 24;
+                            const mm = (q * 15 + quarter * 15) % 60;
+                            ticks.push([q * 15, zeropad(hh) + ":" + zeropad(mm)]);
+                        } else {
+                            if (q % 4 === 0) {
+                                const hh = parseInt(hour + q * .25 + quarter * 0.25) % 24;
+                                const mm = (q * 15 + quarter * 15) % 60;
+                                ticks.push([q * 15, zeropad(hh) + ":" + zeropad(mm)]);
+                            }
+                        }
+                    }
+                    show_points = true;
+                    x_max = 15 * spancount;
+                    break;
+                {# minutes in hour #}
+                case "hour":
+                    for (let h = 0; h < spancount; h++) {
+                        if (spancount < 10)  {
+                            let min_inc = spancount < 4 ? 10 : 30;
+                            for (let m = 0; m < 60; m += min_inc) {
+                                ticks.push([h * 60 + m, zeropad((hour + h) % 24) + ":" + zeropad(m)]);
+                            }
+                            if (h === spancount - 1) {
+                                ticks.push([(h + 1) * 60, zeropad((hour + h + 1) % 24) + ":00"]);
+                            }
+                        } else  {
+                            ticks.push([h * 60, zeropad((hour + h) % 24) + ":00"]);
+                            if (h === spancount - 1) {
+                                ticks.push([(h + 1) * 60, zeropad((hour + h + 1) % 24) + ":00"]);
+                            }
+                        }
+                    }
+                    show_points = true;
+                    x_max = 60 * spancount;
+                    break;
+                {# hours in day #}
+                case "day":
+                    const h_inc = [1, 2, 2, 4, 4, 6, 6];
+
+                    for (let h = 0; h <= spancount * 24; h += h_inc[spancount - 1]) {
+                        ticks.push([h, zeropad(h % 24)]);
+                    }
+
+                    x_max = 24 * spancount;
+                    break;
+                {# days in month #}
+                case "month":
+                    let days_ofs = 0;
+                    const m_inc = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10];
+                    let x_ticks = [];
+
+                    for (let m = 0; m < spancount; m++) {
+                        const mm = (month + m) % 12;
+                        const yy = year + Math.floor((month + m) / 12);
+
+                        for (let i = 1; i <= daysInMonth(mm, yy); i++) {
+                            x_ticks.push([days_ofs + i, i.toString()]); // 3 PORT/KREM: BUGFIX 1.1.4a
+                        }
+
+                        days_ofs += daysInMonth(mm, yy);
+                    }
+
+                    for (let i = 0; i + m_inc[spancount - 1] <= x_ticks.length; i += m_inc[spancount - 1]) {
+                        ticks.push(x_ticks[i]);
+                    }
+
+                    ticks.push([days_ofs + 1, "1"]);  // 3 PORT/KREM: BUGFIX 1.1.4a
+
+                    x_min = 1;
+                    x_max = days_ofs + 1;
+                    break;
+                {# months in year #}
+                case "year":
+                    const y_inc = [1, 1, 1, 1, 1, 1, 1];
+                    let days_cnt = 0;
+
+                    for (let y = 0; y < spancount; y++) {
+                        let y_days_cnt = 0;
+                        for (let m = 0; m < 12; m += y_inc[spancount - 1]) {
+                            ticks.push([(days_cnt + y_days_cnt) / 10.0, (m + 1).toString()]); {# 3 PORT/KREM: BUGFIX 1.1.4a #}
+                            y_days_cnt += daysInMonth(m + 1, year + y);
+                        }
+
+                        days_cnt += daysInYear(year + y)
+                        ticks.push([days_cnt / 10.0, "1"]); // 3 PORT/KREM: BUGFIX 1.1.4a
+                    }
+
+                    x_min = 0;
+                    x_max = days_cnt / 10.0;
+                    break;
+            }
+            {# calculate bar width for cumulative graph #}
+            if (cumulative === "1") {
+                try {
+                    bar_width = x_max / spancount / resolution / tag_count * 0.8;
+                } catch(err) {
+                    bar_width = 1;
+                }
+
+                if (series_data.length > 1)
+                {
+                    for (var i = 1; i < series_data.length; i++)
+                    {
+                        for (var j = 0; j < series_data[i].data.length; j++)
+                            series_data[i].data[j][0] += bar_width;
+                    }
+                }
+            }
+
+            let series_options = {};
+
+            switch (prop["graphstyle"]) {
+                case "bars":
+                    series_options = {
+                        bars: {
+                            show: true,
+                            align: "left",
+                            barWidth: bar_width
+                        }
+                    };
+                    break;
+
+                default:
+                    series_options = {
+                        lines: { show: true },
+                        points: { show: show_points }
+                    };
+                    break;
+            }
+
+            timeplots[id] = $.plot(
+                $("#" + id + " .graph"),
+                series_data,
+                {
+                    series: series_options,
+                    crosshair: {
+                        mode: "x",
+                        color: "#AA000060",
+                        lineWidth: 2
+                    },
+                    xaxis: {
+                        ticks: ticks,
+                        min: x_min,
+                        max: x_max,
+                        autoScale: "none"
+                    },
+                    yaxis: {
+                        ticks: 10,
+                        min: y_min,
+                        max: y_max
+                    },
+                    grid: {
+                        show: true,
+                        backgroundColor: { colors: ["#FFFFFF", "#E4E4E4"] },
+                        markings: markings,
+                        clickable: false,
+                        hoverable: true,
+                        autoHighlight: false
+                    },
+                    legend: {
+                        show: GetObjectProperties(id)["tag_0"].length !== 0 && GetObjectProperties(id)["showlegend"] === "true",
+                        labelFormatter: function(label, series) {
+                            let legendunit = prop["legendunit"];
+                            if (legendunit != null && legendunit.length > 0) {
+                                return label + " " + legendunit;
+                            }
+                            return label;
+                        },
+                        position: "ne",
+                        backgroundColor: '#FFFFFFD8',
+                        backgroundOpacity: 0
+                    }
+                }
+            );
+            $("#" + id + " .legendLayer").css('background', '#FFFFFFD8');
+            $("#" + id + " .background").attr('fill-opacity', '0');
+
+            $("#" + id + " .graph").bind("plothover", function(event, pos, item) {
+                if (!updateLegendTimeout) {
+                    updateLegendTimeout = setTimeout(
+                        function () {
+                            const plot = timeplots[id];
+                            updateLegendTimeout = null;
+                            const axes = plot.getAxes();
+
+                            if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
+                                pos.y < axes.yaxis.min || pos.y > axes.yaxis.max) {
+                                return;
+                            }
+
+                            let dataset = plot.getData();
+                            for (let i = 0; i < dataset.length; ++i) {
+                                let series = dataset[i];
+
+                                // find the nearest points, x-wise
+                                let j = 0;
+                                for (j = 0; j < series.data.length; ++j) {
+                                    if (series.data[j][0] > pos.x) {
+                                        break;
+                                    }
+                                }
+
+                                // now interpolate
+                                let y;
+                                let p1 = series.data[j - 1];
+                                let p2 = series.data[j];
+
+                                if (p1 == null && p2 == null) {
+                                    //return;
+                                    continue;
+                                }
+
+                                if (p1 == null) {
+                                    y = p2[1];
+                                } else if (p2 == null) {
+                                    y = p1[1];
+                                } else {
+                                    y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
+                                }
+
+                                $("#" + id + " .legendLayer > g > text > tspan").eq(i).text(
+                                    series.label.replace(/=.*/, "= " + y.toFixed(decimals) + (prop["legendunit"] != null && prop["legendunit"].length > 0 ? " " + prop["legendunit"] : ""))
+                                );
+                            }
+                        },
+                        50
+                    );
+                }
+
+                if (show_points && item) {
+                    if (previousPoint !== item.datapoint) {
+                        previousPoint = item.datapoint;
+
+                        $("#tooltip").remove();
+                        let x = item.datapoint[0].toFixed(decimals);
+                        let y = item.datapoint[1].toFixed(decimals);
+
+                        showTooltip(item.pageX, item.pageY, item.series.label.replace(/=.*/, "= " + y));
+                    }
+                } else {
+                    $("#tooltip").remove();
+                    previousPoint = null;
+                }
+            });
+
+            $("#" + id + " .loading").hide();
+        }
+    );
+}
+
+function UpdateTimeplotCmdVisibility(id)
+{
+    let value = $("#" + id + " .period").val();
+    $("#" + id + " .quarter").hide();
+    $("#" + id + " .hour").hide();
+    $("#" + id + " .day").hide();
+    $("#" + id + " .month").hide();
+
+    switch(value) {
+        case "quarter":
+            $("#" + id + " .quarter").show();
+            $("#" + id + " .hour").show();
+            $("#" + id + " .day").show();
+            $("#" + id + " .month").show();
+            break;
+
+        case "hour":
+            $("#" + id + " .hour").show();
+            $("#" + id + " .day").show();
+            $("#" + id + " .month").show();
+            break;
+
+        case "day":
+            $("#" + id + " .day").show();
+            $("#" + id + " .month").show();
+            break;
+
+        case "month":
+            $("#" + id + " .month").show();
+            break;
+    }
+}
+
+function UpdateSpanCountCombo(id)
+{
+    const period = $("#" + id + " .period").val();
+    const min = 1;
+    let max = 1;
+    let html = "";
+    const prop = GetObjectProperties(id);
+    let values = [];
+
+    switch(period) {
+        case "quarter":
+            max = 7;
+            values = [1, 2, 4, 8, 24, 48, 96];
+            break;
+        case "hour":
+            max = 6;
+            values = [1, 2, 6, 12, 24, 48];
+            break;
+        case "day": max = 7; break;
+        case "month": max = 12; break;
+        case "year": max = 40; break;
+    }
+
+    let sel_default = prop["initialized"] === 0 ? prop["spancount"] : 1;
+
+    if (values.length === 0) {
+        values = [...Array(max).keys()].map(i => i + min);
+    }
+
+    for (let i = 0; i <= max - min; i++) {
+        let val = values[i];
+        let sel = val === sel_default ? ' selected="selected"' : '';
+        html += '<option value="' + val + '"' + sel + '>' + val + '</option>';
+    }
+
+    {# first erase to avoid unusual number jumping #}
+    $("#" + id + " .spancount").html("").html(html);
+    return sel_default;
+}
+
+function ChangeTimeplotDate(id, increment)
+{
+    const period = $("#" + id + " .period").val();
+    const hour = parseInt($("#" + id + " .hour").val());
+    const quarter = parseInt($("#" + id + " .quarter").val());
+    let day = parseInt($("#" + id + " .day").val());
+    let month = parseInt($("#" + id + " .month").val());
+    let year = parseInt($("#" + id + " .year").val());
+
+    let date = new Date(year, month - 1, day, hour, 0, 0, 0);
+
+    switch(period) {
+        case "quarter":
+            const i = (quarter + increment) * 15;
+            date = new Date(year, month - 1, day, hour + parseInt(i / 60), i % 60, 0, 0);
+            break;
+        case "hour":
+            date = new Date(year, month - 1, day, hour + increment, 0, 0, 0);
+            break;
+        case "day":
+            date.setDate(date.getDate() + increment);
+            break;
+        case "month":
+            date = new Date(year, month - 1 + increment, day, hour, 0, 0, 0);
+            break;
+        case "year":
+            date = new Date(year + increment, month - 1, day, hour, 0, 0, 0);
+            break;
+    }
+
+    day = date.getDate();
+    month = date.getMonth() + 1;
+    year = date.getFullYear();
+
+    const year_exists = $(".period_selection .year option[value='" + year + "']").val() != null;
+    if (year_exists) {
+        const days_in_month = daysInMonth(month, year);
+        if (days_in_month !== $("#" + id + " .day option").length) {
+            let html = "";
+            for (let n = 1; n <= daysInMonth(month, year); n++) {
+                html += '<option value="' + n + '">' + n + '</option>';
+            }
+            $("#" + id + " .day").html(html);
+        }
+
+        $("#" + id + " .quarter").val(parseInt(date.getMinutes() / 15));
+        $("#" + id + " .hour").val(date.getHours());
+        $("#" + id + " .day").val(day);
+        $("#" + id + " .month").val(month);
+        $("#" + id + " .year").val(year);
+        return true;
+    }
+
+    return false;
+}
+
+function ChangeNumberOfDaysInMonth(id)
+{
+    ChangeTimeplotDate(id, 0);
+}
+
+
+function UpdateTimeplotTrigger(id)
+{
+    if (ChangeTimeplotDate(id, 0)) {
+        UpdateTimeplot(id);
+    }
+}
+
+{% elif code == "page_load_init" %}
+UpdateTimeplotCmdVisibility("{{ id }}");
+UpdateSpanCountCombo("{{ id }}");
+UpdateTimeplot("{{ id }}");
+$("#{{ id }} [name='initialized']").val("1");
+
+{% elif code == "init_jq_binding" %}
+$(".cybro_{{ type }} .timeplot_trigger").change(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    UpdateTimeplotTrigger(id);
+});
+
+$(".cybro_{{ type }} .period").change(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    UpdateSpanCountCombo(id);
+    UpdateTimeplotCmdVisibility(id);
+    UpdateTimeplotTrigger(id);
+});
+
+$(".cybro_{{ type }} .month").change(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    ChangeNumberOfDaysInMonth(id);
+    UpdateTimeplotTrigger(id);
+});
+
+$(".cybro_{{ type }} .next").click(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    if (ChangeTimeplotDate(id, 1)) {
+        UpdateTimeplot(id);
+    }
+    return false;
+});
+
+$(".cybro_{{ type }} .prev").click(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    if (ChangeTimeplotDate(id, -1)) {
+        UpdateTimeplot(id);
+    }
+    return false;
+});
+
+$(".cybro_{{ type }} .now").click(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    const spancount = parseInt($("#" + id + " .spancount").val());
+    const now = new Date();
+
+    $("#" + id + " .hour").val(now.getHours());
+    $("#" + id + " .day").val(now.getDate());
+    $("#" + id + " .month").val(now.getMonth() + 1);
+    $("#" + id + " .year").val(now.getFullYear());
+
+    if (ChangeTimeplotDate(id, -(spancount - 1))) {
+        UpdateTimeplot(id);
+    }
+    return false;
+});
+
+$(".cybro_{{ type }} .download_csv_data").click(function() {
+    const id = $(this).parent().parent().parent().attr("id");
+    const prop = GetObjectProperties(id);
+    const period = $("#" + id + " .period").val();
+    const hour = $("#" + id + " .hour").val();
+    const day = $("#" + id + " .day").val();
+    const month = $("#" + id + " .month").val();
+    const year = $("#" + id + " .year").val();
+    const start = year + ":" + month + ":" + day + ":" + hour;
+    const cumulative = prop["cumulative"];
+    let resolution = prop["resolution"];
+    const spancount = $("#" + id + " .spancount").val();
+
+    if (resolution.length === 0) {
+        resolution = calc_timeplot_resolution(id, period, month, year);
+    }
+
+    let params = [];
+
+    let tags = [];
+    for (let i = 0; i < parseInt(prop["tag_count"]); i++) {
+        tags.push(prop["tag_" + i]);
+    }
+
+    params.push("t=" + tags.join("+"));
+    params.push("p=" + period);
+    params.push("s=" + start);
+    params.push("sc=" + spancount);
+    params.push("cum=" + cumulative);
+    params.push("res=" + resolution);
+    params.push("dec=" + prop["decimals"]);
+
+    const re = new RegExp(".*/(\\d+)/?$");
+    const match = re.exec(window.location.pathname);
+    const plant_homepage = match[1];
+    params.push("page="+ plant_homepage);
+
+    window.location = "/service/download_timeplot_data/" + params.join(",") + "/?rand=" + new Date().getTime();
+
+    return false;
+});
+
+$(".cybro_{{ type }} .timeplot_fullscreen").click(function() {
+    const container = $(this).parents(".cybro_{{ type }}");
+    const id = $(container).attr("id");
+    const prop = GetObjectProperties(id);
+    let args = [];
+    let tags = [];
+    let colors = [];
+    let legend_labels = [];
+    var myWin;
+
+    for (let i = 0; i < parseInt(prop["tag_count"]); i++) {
+        tags.push(prop["tag_" + i]);
+    }
+
+    for (let i = 0; i < parseInt(prop["tag_count"]); i++) {
+        if (prop["color_" + i].length !== 0) {
+            colors.push(prop["color_" + i]);
+        }
+    }
+
+    for (let i = 0; i < parseInt(prop["tag_count"]); i++) {
+        if (prop["legendlabel_" + i] != null && prop["legendlabel_" + i].length !== 0) {
+            legend_labels.push(prop["legendlabel_" + i]);
+        }
+    }
+
+    colors = colors.join(",");
+    if (colors.length === 0) {
+        colors = "-";
+    }
+    legend_labels = legend_labels.join(",");
+    if (legend_labels.length === 0) {
+        legend_labels = "-";
+    }
+
+    const re = new RegExp(".*/(\\d+)/?$");
+    const match = re.exec(window.location.pathname);
+    const plant_homepage = match[1];
+
+    args.push(id);
+    args.push(prop["graphstyle"]);
+    args.push(tags.join(","));
+    args.push(prop["min"]);
+    args.push(prop["max"]);
+    args.push(escape(colors));
+    args.push(prop["decimals"]);
+    args.push(encodeURIComponent(legend_labels));
+    args.push(prop["legendunit"] != null && prop["legendunit"].length > 0 ? prop["legendunit"] : "-");
+    args.push(prop["showlegend"]);
+    args.push(plant_homepage);
+
+    let w = 800;
+    let h = 600;
+    if (window.screen) {
+        w = window.screen.availWidth;
+        h = window.screen.availHeight;
+    }
+
+    window.open("/timeplot/" + args.join("/") + "/", "myWin", "resizable,width=" + w + ",height=" + h + ",top=0,left=0");
+
+    return false;
+});
+
+{% endif %}

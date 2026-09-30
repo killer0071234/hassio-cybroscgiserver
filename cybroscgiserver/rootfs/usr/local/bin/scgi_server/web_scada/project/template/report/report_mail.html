@@ -1,0 +1,64 @@
+<html>
+	<head>
+		<style type="text/css">
+			.report tr.title th {
+				font-size: 18px;
+				color: black;
+				text-align: left;
+				background-color: #FAFAFA;
+				border: 0px solid #FAFAFA;
+				border-bottom: 0px solid #FAFAFA;
+			}
+			.report th {
+				background-color: #1F91C1;
+				color: white;
+				padding: 3px 0px 3px 0px;
+				border: 0px solid #FAFAFA;
+				border-bottom: 1px solid #166688;
+				font-size: 14px;
+				font-weight: bold;
+				text-align: center;
+			}
+			.report td {
+				text-align: center;
+				border: 0px solid #FAFAFA;
+				border-bottom: 1px solid #EAEAEA;
+				line-height: 26px;
+				color: black;
+				font-size: 8pt;
+			}
+			.report .col_type {
+				width: 20px;
+			}
+			.report .col_raised, .report .col_gone, .report .col_ack {
+				width: 110px;
+			}
+			.report .col_msg {
+				text-align: left;
+			}
+			.report .col_tag {
+				padding-left: 10px;
+				text-align: left;
+				width: 140px;
+			}
+			.report .col_status {
+				width: 40px;
+			}
+			.report .alarm.not_ack {
+				background-color: #FFCCCC;
+			}
+			table.report {
+				font-family: Arial, Helvetica, sans-serif;
+				background-color: #FAFAFA;
+				border: 0px solid #FAFAFA;
+				border-collapse: collapse;
+			}
+		</style>
+	</head>
+	<body>
+		{% for report in reports %}
+			{{ report.report_html|safe }}
+			<br>
+		{% endfor %}
+	</body>
+</html>

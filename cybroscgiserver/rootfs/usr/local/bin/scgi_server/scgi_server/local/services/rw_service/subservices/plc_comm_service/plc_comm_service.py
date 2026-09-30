@@ -1,4 +1,4 @@
-import asyncio
+from asyncio import AbstractEventLoop
 from itertools import chain
 from typing import Optional, List, Dict
 
@@ -36,16 +36,17 @@ from scgi_server.local.services.rw_service.subservices.plc_comm_service \
 
 class PlcCommService:
     def __init__(
-            self,
-            log: ConditionalLogger,
-            plc_info_service: PlcInfoService,
-            alc_service: AlcService,
-            plc_activity_service: PlcActivityService,
-            plc_client_manager: PlcClientManager,
-            plc_cache: PlcCache,
-            data_logger_cache: DataLoggerCache,
-            cpu_intensive_task_runner: CPUIntensiveTaskRunner,
-            only_user_variables: bool
+        self,
+        log: ConditionalLogger,
+        plc_info_service: PlcInfoService,
+        alc_service: AlcService,
+        plc_activity_service: PlcActivityService,
+        plc_client_manager: PlcClientManager,
+        plc_cache: PlcCache,
+        data_logger_cache: DataLoggerCache,
+        cpu_intensive_task_runner: CPUIntensiveTaskRunner,
+        only_user_variables: bool,
+        loop: AbstractEventLoop
     ):
         self._log: ConditionalLogger = log
         self._plc_info_service: PlcInfoService = plc_info_service
@@ -58,6 +59,7 @@ class PlcCommService:
             cpu_intensive_task_runner
         )
         self._only_user_variables: bool = only_user_variables
+        self._loop: AbstractEventLoop = loop
 
     def set_exchanger(self, exchanger: AbusExchanger):
         self._plc_client_manager.set_exchanger(exchanger)
@@ -142,11 +144,12 @@ class PlcCommService:
 
         if len(postponable_requests) > 0:
             self._log.debug("Fetch postponable")
-            (asyncio.get_running_loop()
-             .create_task(plc_communicator.process_rw_requests(
-                postponable_requests, []
-             ))
-             .add_done_callback(create_task_callback(self._log)))
+            (
+                self._loop.create_task(plc_communicator.process_rw_requests(
+                    postponable_requests, []
+                ))
+                .add_done_callback(create_task_callback(self._log))
+            )
 
         if len(urgent_requests) > 0:
             responses += await plc_communicator.process_rw_requests(
@@ -182,7 +185,10 @@ class PlcCommService:
         self._plc_info_service.update_program_datetime(nad, program_datetime)
         return await self._plc_client_manager.get(nad)
 
-    async def _update_plc_client_ip(self, plc_client: PlcClient) -> PlcClient:
+    async def _update_plc_client_ip(
+        self,
+        plc_client: PlcClient
+    ) -> Optional[PlcClient]:
         # deleting and requesting plc_info will implicitly trigger ip detection
         nad = plc_client.plc_info.nad
         await self._plc_info_service.remove_plc_info(nad)

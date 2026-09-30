@@ -19,7 +19,7 @@ from scgi_server.local.services.rw_service.subservices.plc_comm_service \
 
 
 class SinglePlcStatusService:
-    """Exposes status for specific plc
+    """Exposes status for specific plc.
     """
     def __init__(self,
                  nad: int,
@@ -66,15 +66,19 @@ class SinglePlcStatusService:
     def bytes_transferred(self) -> int:
         return self.plc_activity.bytes_transferred
 
-    async def get_alc_text(self) -> str:
+    async def get_alc_text(self) -> Optional[str]:
         crc = self.plc_activity.last_used_alc_crc
         if crc is not None:
             return await self._alc_service.load_alc_text_for_crc(crc)
+        else:
+            return None
 
-    async def get_alc_data(self) -> Dict[str, VarInfo]:
+    async def get_alc_data(self) -> Optional[Dict[str, VarInfo]]:
         crc = self.plc_activity.last_used_alc_crc
         if crc is not None:
             return self._alc_service[crc]
+        else:
+            return None
 
     @property
     def communication_error_count(self) -> int:

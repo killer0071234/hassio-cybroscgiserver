@@ -3,8 +3,10 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from typing import Optional
 
-from scgi_server.local.services.rw_service.subservices.plc_comm_service.plc_client_manager.plc_client.plc_head import PlcHead
-from scgi_server.local.services.rw_service.subservices.plc_comm_service.plc_client_manager.plc_client.status import PlcStatus
+from scgi_server.local.services.rw_service.subservices. \
+    plc_comm_service.plc_client_manager.plc_client.plc_head import PlcHead
+from scgi_server.local.services.rw_service.subservices. \
+    plc_comm_service.plc_client_manager.plc_client.status import PlcStatus
 
 
 @dataclass

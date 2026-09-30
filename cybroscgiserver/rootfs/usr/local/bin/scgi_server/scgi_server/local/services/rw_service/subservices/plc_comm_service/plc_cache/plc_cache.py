@@ -1,9 +1,7 @@
+import asyncio
 from asyncio import AbstractEventLoop
 from datetime import timedelta
 from typing import Dict
-
-from rx import timer
-from rx.scheduler.eventloop import AsyncIOScheduler
 
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
     .plc_cache.single_plc_cache import SinglePlcCache
@@ -23,11 +21,11 @@ class PlcCache:
         cleanup_period_s = cleanup_period.total_seconds()
 
         if cleanup_period_s != 0:
-            timer(
-                cleanup_period_s,
-                cleanup_period_s,
-                AsyncIOScheduler(loop)
-            ).subscribe(lambda _: self._cleanup())
+            self._task = self._loop.create_task(
+                self._cleanup_task(cleanup_period_s)
+            )
+        else:
+            self._task = None
 
     def __getitem__(self, nad: int) -> SinglePlcCache:
         try:
@@ -40,6 +38,11 @@ class PlcCache:
             )
             self._plc_caches[nad] = result
             return result
+
+    async def _cleanup_task(self, cleanup_period: float) -> None:
+        while True:
+            await asyncio.sleep(cleanup_period)
+            self._cleanup()
 
     def _cleanup(self) -> None:
         for nad in self._plc_caches:

@@ -2,7 +2,7 @@ import asyncio
 from asyncio import AbstractEventLoop
 from typing import Callable, Coroutine
 
-from scgi_server.local.config.config.eth_config import SocketsType
+from scgi_server.local.config.eth_config import SocketsType
 from lib.general.conditional_logger import ConditionalLogger
 from lib.services.alias_service import AliasService
 from scgi_server.local.input_output.abus_stack.abus.abus_message import \
@@ -35,8 +35,10 @@ class SocketService:
         self._sockets: SocketsType = sockets
 
     async def _propagate_socket_message(self, abus_msg: AbusMessage):
-        """Serializes ABUS socket message to xml and sends it to clients via
+        """Serializes an ABUS socket message to XML and sends it to clients via
         send_client_message_handler call.
+
+        :param abus_msg: ABUS message
         """
         crc = await self._loop.create_task(
             self._plc_comm_service.get_crc(abus_msg.from_nad)
@@ -54,7 +56,9 @@ class SocketService:
         await self._send_client_message_handler(xml)
 
     def receive(self, abus_msg: AbusMessage) -> None:
-        """Process received ABUS socket message and send it to clients.
+        """Process a received ABUS socket message and send it to clients.
+
+        :param abus_msg: ABUS message
         """
         self._log.debug(f"Received socket message: {abus_msg}")
         asyncio.run_coroutine_threadsafe(

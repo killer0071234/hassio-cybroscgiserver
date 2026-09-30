@@ -61,23 +61,56 @@ class SystemStatusService:
                 8
             ]
 
+        def _get_last_update_string(self) -> str:
+            return (
+                self.last_update.strftime("%Y-%m-%d %H:%M:%S")
+                if self.origin != PlcInfo.Origin.STATIC
+                else ""
+            )
+
+        def _get_host_port_string(self) -> str:
+            return (f"{self.ip_port[0] if self.ip_port[0] else ''}"
+                    f":{self.ip_port[1]}")
+
+        def _get_status_string(self) -> str:
+            if self.status == PlcStatus.STOP:
+                status = "stop"
+            elif self.status == PlcStatus.PAUSE :
+                status = "pause"
+            elif self.status == PlcStatus.RUN:
+                status = "run"
+            elif self.status == PlcStatus.NO_VALID_PROGRAM:
+                status = "no pgm"
+            elif self.status == PlcStatus.SCAN_OVERRUN_ERROR:
+                status = "so err"
+            else:
+                status = ""
+
+            return status
+
+        def _get_program_sent_string(self) -> str:
+            return (
+                self.program_sent.strftime("%Y-%m-%d %H:%M:%S")
+                if self.program_sent
+                else ""
+            )
+
+        def _get_response_time_string(self) -> str:
+            return (str(int(self.response.microseconds / 1000.0))
+                    if self.response
+                    else "")
+
         def to_string_list(self) -> List[str]:
             return [
-                (self.last_update.strftime("%Y-%m-%d %H:%M:%S")
-                 if self.origin != PlcInfo.Origin.STATIC
-                 else "0000-00-00 00:00:00"),
+                self._get_last_update_string(),
                 str(self.nad),
                 self.origin.value.lower(),
-                (f"{self.ip_port[0] if self.ip_port[0] else ''}"
-                 f":{self.ip_port[1]}"),
-                self.status.value.lower() if self.status else "missing",
-                "ok" if self.program else "missing",
-                "ok" if self.alc else "missing",
-                (self.program_sent.strftime("%Y-%m-%d %H:%M:%S")
-                 if self.program_sent else '9999-99-99 99:99:99'),
-                (str(int(self.response.microseconds / 1000.0))
-                 if self.response
-                 else "9999")
+                self._get_host_port_string(),
+                self._get_status_string(),
+                "ok" if self.program else "",
+                "ok" if self.alc else "",
+                self._get_program_sent_string(),
+                self._get_response_time_string()
             ]
 
     def __init__(self,
@@ -142,7 +175,8 @@ class SystemStatusService:
         return self._push_activity_service.successful_push_acknowledgments_count
 
     async def get_plcs(self) -> List[int]:
-        return [plc_info.nad for plc_info in self._plc_info_service.get_plc_infos()]
+        return [plc_info.nad for plc_info in
+                self._plc_info_service.get_plc_infos()]
 
     @property
     def push_plc_info_table(self) -> List[PushPlcInfo]:

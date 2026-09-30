@@ -1,0 +1,86 @@
+{% if code == "html" %}
+<span id="{{ id }}" class="cybro_{{ type }} {% if action == "1" %}{% if rw_access %} write_enabled {% endif %}{% endif %}">
+    <img title="{{ var }}" src="" alt="" />
+    {% if action == "1" %}
+        {% if rw_access %}
+            <input type="hidden" name="tag" value="{{ var }}" />
+            <input type="hidden" name="curr_index" value="{{ value_count|add:"-1" }}" />
+            <input type="hidden" name="max_index" value="{{ value_count|add:"-1" }}" />
+            {% for val in values %}
+                <input type="hidden" name="value_{{ forloop.counter0 }}" value="{{ val }}" />
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+</span>
+
+{% elif code == "tag_update_func" %}
+function UpdateBitlist(object_id, tag_name, description, value, files, values)
+{
+    if (!skup_update) {
+        var src = "";
+        if (!isNaN(value)) {
+            var val = parseFloat(value);
+            var valIndex = 0;
+            for (var i = 0; i < values.length; i++) {
+                valIndex = i;
+                if (values[i] > val) {
+                    break;
+                }
+            }
+            if (valIndex < values.length) {
+                if (values[valIndex] <= val) {
+                    valIndex++;
+                }
+            }
+            if (valIndex < files.length) {
+                src = files[valIndex];
+            }
+
+            $("#" + object_id + " > input[name=\"curr_index\"]").val(valIndex);
+        }
+
+        var oldSrc = $("#" + object_id + " > img").attr("src");
+        if (src != oldSrc) {
+            $("#" + object_id + " > img").attr("src", src);
+        }
+
+        $("#" + object_id + " > img").removeClass("active");
+        SetObjectTitle($("#" + object_id + " > img"), tag_name, description);
+    }
+}
+
+function BitlistSubmitValue(object_id, cybro_var, curr_index, max_index)
+{
+    {% if rw_access %}
+    skup_update = true;
+
+    var next_index = curr_index + 1;
+    if (next_index > max_index) {
+        next_index = 0;
+    }
+
+    var value = GetObjectProperties(object_id)["value_" + next_index];
+    $("#" + object_id + " > input[name=\"curr_index\"]").val(next_index);
+
+    if (!isNaN(value)) {
+        SetTagValue(cybro_var, value);
+        $("#" + object_id + " > img").addClass("active");
+    }
+    {% endif %}
+}
+
+{% elif code == "tag_update_code" %}
+UpdateBitlist("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], {{ files|safe }}, {{ change_values|safe }});
+
+{% elif code == "init_jq_binding" %}
+$(".cybro_{{ type }} > img").click(function() {
+    var parent = $(this).parent();
+    var id = $(parent).attr("id");
+    var prop = GetObjectProperties(id);
+    if (prop["tag"] != null && prop["tag"].length > 0) {
+        BitlistSubmitValue(id, prop["tag"], parseInt(prop["curr_index"]), parseInt(prop["max_index"]));
+    }
+    return false;
+});
+
+{% endif %}
