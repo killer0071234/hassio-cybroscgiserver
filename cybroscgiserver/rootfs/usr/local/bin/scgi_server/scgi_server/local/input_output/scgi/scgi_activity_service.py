@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class ScgiActivityService:
@@ -16,7 +16,7 @@ class ScgiActivityService:
         return self._responses_sent_count
 
     @property
-    def server_uptime(self) -> datetime:
+    def server_uptime(self) -> timedelta:
         return datetime.now() - self._server_start_datetime
 
     def report_request_received(self) -> None:

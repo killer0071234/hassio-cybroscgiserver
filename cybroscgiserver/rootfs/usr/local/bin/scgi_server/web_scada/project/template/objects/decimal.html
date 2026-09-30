@@ -1,0 +1,65 @@
+{% if code == "html" %}
+<span id="{{ id }}" class="cybro_{{ type }}" title="{{ var }}">&nbsp;</span>
+
+{% elif code == "tag_update_func" %}
+function UpdateString(object_id, tag_name, description, value, decimals, size, zeroblanking, groupdigits)
+{
+    if (value == null) {
+        value = "?"
+    } else if (!isNaN(value)) {
+        value = Number(value);
+        const isFloat = value !== Math.floor(value);
+
+        if (isFloat) {
+            value = value.toFixed(decimals);
+        } else {
+            value = (value / Math.pow(10, decimals)).toFixed(decimals);
+        }
+
+        if (zeroblanking === 0 && value.length < size) {
+            while (value.length < size) {
+                value = "0" + value;
+            }
+        }
+
+        if (groupdigits) {
+            let d = value.split(".");
+            let dec = "";
+            let frac = "";
+            let s = "";
+
+            dec = d[0];
+            if (d.length > 1) {
+                frac = d[1];
+            }
+
+            d = [];
+
+            while (true) {
+                s = dec.slice(-3);
+                if (s.length > 0 && s !== "-") {
+                    d.splice(0, 0, s);
+                    dec = dec.slice(0, dec.length - s.length);
+                } else {
+                    if (s === "-" && d.length !== 0) {
+                        d[0] = "-" + d[0];
+                    }
+                    break;
+                }
+            }
+
+            value = d.join(",");
+            if (frac.length !== 0) {
+                value += "." + frac
+            }
+        }
+    }
+
+    $("#" + object_id).text(value)
+    SetObjectTitle($("#" + object_id), tag_name, description);
+}
+
+{% elif code == "tag_update_code" %}
+UpdateString("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], {{ decimals }}, {{ digits }}, {{ zeroblanking }}, {{ groupdigits }});
+
+{% endif %}

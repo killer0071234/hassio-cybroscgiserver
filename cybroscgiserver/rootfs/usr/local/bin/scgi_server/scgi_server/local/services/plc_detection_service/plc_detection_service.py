@@ -5,7 +5,7 @@ from scgi_server.local.defaults import AUTODETECT_NAD, ABUS_BROADCAST_PORT
 from scgi_server.local.errors import ScgiServerError
 from scgi_server.local.general.errors import ExchangerTimeoutError
 from scgi_server.local.general.transaction_id_generator import \
-    transaction_id_generator
+    TransactionIdGeneratorType
 from scgi_server.local.input_output.abus_stack.abus.abus_exchanger import \
     AbusExchanger
 from scgi_server.local.input_output.abus_stack.abus.abus_message import \
@@ -19,27 +19,22 @@ class PlcDetectionService:
     def __init__(self,
                  log: ConditionalLogger,
                  plc_info_service: 'PlcInfoService',
-                 eth_enabled: bool,
                  eth_autodetect_enabled: bool,
                  eth_autodetect_address: str,
-                 can_enabled: bool):
+                 trans_id_generator: TransactionIdGeneratorType):
         self._log: ConditionalLogger = log
         self._plc_info_service: 'PlcInfoService' = plc_info_service
-        self._eth_enabled: bool = eth_enabled
         self._eth_autodetect_enabled: bool = eth_autodetect_enabled
         self._eth_autodetect_address: str = eth_autodetect_address
-        self._can_enabled: bool = can_enabled
 
         self._nad: int = AUTODETECT_NAD
-        self._transaction_id_generator = (
-            transaction_id_generator(0, 0xFFFF)
-        )
+        self._transaction_id_generator = trans_id_generator
         self._exchanger: Optional[AbusExchanger] = None
 
     def set_exchanger(self, exchanger: AbusExchanger):
         self._exchanger = exchanger
 
-    async def detect(self, nad: int) -> None:
+    async def detect(self, nad: int) -> Optional[str]:
         try:
             self._log.info(lambda: f"Detecting ip for c{nad}")
             ip = await self._ping_and_get_ip(nad)
@@ -54,15 +49,8 @@ class PlcDetectionService:
 
         error = None
 
-        if self._eth_enabled and self._eth_autodetect_enabled:
+        if self._eth_autodetect_enabled:
             ping_msg = self._create_broadcast_ping_message(plc_info)
-            try:
-                return await self._detect_with_ping_message(ping_msg)
-            except ExchangerTimeoutError as e:
-                error = e
-
-        if self._can_enabled:
-            ping_msg = self._create_zero_ping_message(plc_info)
             try:
                 return await self._detect_with_ping_message(ping_msg)
             except ExchangerTimeoutError as e:
@@ -70,16 +58,14 @@ class PlcDetectionService:
 
         if error is None:
             error = ScgiServerError(
-                'Autodetect failed because following conditions are not '
-                'satisfied: CAN: enabled or (ETH: enabled and '
-                'autodetect_enabled)'
+                'Autodetect failed because response not received'
             )
 
         raise error
 
     async def _detect_with_ping_message(self, ping_msg: AbusMessage) -> str:
         response = await self._exchanger.exchange_threadsafe(ping_msg)
-        ip, port = response.addr
+        ip, _ = response.addr
 
         return ip
 

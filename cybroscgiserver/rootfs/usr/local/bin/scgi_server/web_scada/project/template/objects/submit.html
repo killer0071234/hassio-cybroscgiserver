@@ -1,0 +1,56 @@
+{% if code == "html" %}
+<span id="{{ id }}" class="cybro_{{ type }}">
+    <input class="read_value" type="text" readonly="readonly" value="" size="{{ digits }}" style="background: {{ color }};"/>
+    <input class="value" {% if not rw_access %}style="background: {{ color }};"{% endif %} type="text" {% if not rw_access %}readonly="readonly"{% endif %} value="" size="{{ digits }}"/>
+    <button class="button{% if not rw_access %} disabled{% endif %}">Submit</button>
+    <input type="hidden" name="tag" value="{{ var }}" />
+    <input type="hidden" name="min" value="{{ min }}" />
+    <input type="hidden" name="max" value="{{ max }}" />
+    <input type="hidden" name="decimals" value="{{ decimals }}" />
+</span>
+
+{% elif code == "tag_update_func" %}
+function UpdateSubmit(object_id, tag_name, description, value, decimals)
+{
+    if (!isNaN(value)) {
+        value = (value / Math.pow(10, decimals)).toFixed(decimals);
+    } else {
+        value = "?";
+    }
+    $("#" + object_id + " .read_value").val(value);
+    $("#" + object_id + " .read_value").removeClass("active");
+    SetObjectTitle($("#" + object_id + " .read_value"), tag_name, description);
+}
+
+function SubmitValue(object_id, cybro_var, min, max, decimals)
+{
+    {% if rw_access %}
+    skup_update = true;
+
+    let input = $("#" + object_id + " > .value");
+    let value = $(input).val();
+    $(input).val("");
+
+    if (!isNaN(value) && value != "") {
+        value = value * Math.pow(10, decimals);
+        value = (value < min) ? min : (value > max) ? max : value;
+        SetTagValue(cybro_var, value);
+        value = (value / Math.pow(10,decimals)).toFixed(decimals);
+        $("#" + object_id + " > .read_value").val(value).addClass("active");
+    }
+    {% endif %}
+}
+
+{% elif code == "tag_update_code" %}
+UpdateSubmit("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], {{ decimals }});
+
+{% elif code == "init_jq_binding" %}
+$(".cybro_{{ type }} > button").click(function(){
+    let parent = $(this).parent();
+    let id = $(parent).attr("id");
+    let prop = GetObjectProperties(id);
+    SubmitValue(id, prop["tag"], parseInt(prop["min"]), parseInt(prop["max"]), parseInt(prop["decimals"]));
+    return false;
+});
+
+{% endif %}

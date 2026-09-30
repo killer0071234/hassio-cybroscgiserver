@@ -1,0 +1,234 @@
+
+/******** Decimal ********/
+
+.cybro_decimal {
+    color: #3184E5;
+}
+
+
+/******** Bargraph ********/
+
+.cybro_bargraph {
+    margin: 1px;
+    border: 1px solid silver;
+    padding: 1px;
+    background-color: #FAFAFA;
+}
+
+.cybro_bargraph.horizontal {
+    display: inline-block;
+}
+
+.cybro_bargraph.vertical {
+    float: left;
+}
+
+.cybro_bargraph.horizontal .value, .cybro_bargraph.horizontal .bg {
+    float: left;
+}
+
+.cybro_bargraph.vertical .value {
+}
+
+
+/******** Toggle ********/
+
+.cybro_toggle {
+/*     display: inline; */
+}
+
+.cybro_toggle .value {
+    text-align: right;
+}
+.cybro_toggle .value.active {
+    border-color: red;
+}
+
+
+/******** IncDec ********/
+
+.cybro_incdec  {
+}
+
+.cybro_incdec .value {
+    text-align: right;
+}
+
+.cybro_incdec .value.active {
+    border-color: red;
+}
+
+
+/******** Submit ********/
+
+.cybro_submit {
+}
+
+.cybro_submit .value, .cybro_submit .read_value {
+    text-align: right;
+}
+.cybro_submit .read_value.active {
+    border-color: red;
+}
+
+
+/******** Timeplot ********/
+
+.cybro_timeplot .cmd {
+    margin-bottom: 5px;
+}
+
+.cybro_timeplot .cmd .period_selection {
+    float: left;
+}
+
+.cybro_timeplot .loading {
+    padding: 15px 10px 0 45px;
+    position: absolute;
+    z-index: 1000;
+}
+
+.cybro_timeplot .cmd .download {
+    text-align: right;
+    float: right;
+    width: 100px;
+    padding-top: 3px;
+    padding-right: 5px;
+}
+
+.cybro_timeplot .cmd .timeplot_fullscreen {
+    position: relative;
+    top: 4px;
+    margin-left: 10px;
+}
+
+.cybro_timeplot .fullscreen_close_container {
+    text-align: right;
+    margin-top: 10px;
+}
+
+/******** Alarmlist ********/
+
+.cybro_alarm_list .list {
+    width: 100%;
+    background-color: #FAFAFA;
+}
+
+.cybro_alarm_list .list .button {
+    font-size: 8pt;
+    padding: 1px 5px 1px 5px;
+}
+
+.cybro_alarm_list .list th {
+    background-color: #3184E5;
+    color: white;
+    padding: 3px 0 3px 0;
+    border-bottom: 1px solid #166688;
+}
+
+.cybro_alarm_list .list td {
+    text-align: center;
+    border-bottom: 1px solid #EAEAEA;
+    line-height: 26px;
+    color: black;
+    font-size: 8pt;
+    font-family: Arial;
+}
+
+.cybro_alarm_list .list .col_type {
+    width: 20px;
+}
+
+.cybro_alarm_list .list .col_raised,
+.cybro_alarm_list .list .col_gone,
+.cybro_alarm_list .list .col_ack {
+    width: 110px;
+}
+
+.cybro_alarm_list .list .col_message {
+    text-align: left;
+}
+
+.cybro_alarm_list .list .col_tag {
+    padding-left: 10px;
+    text-align: left;
+    width: 140px;
+}
+
+.cybro_alarm_list .list .col_status {
+    width: 40px;
+}
+
+.cybro_alarm_list .list .alarm {
+/*     background-color: #FFE6E6; */
+}
+
+.cybro_alarm_list .list .alarm.active td {
+}
+
+.cybro_alarm_list .list .alarm.not_ack td {
+    background-color: #FFCCCC;
+}
+
+.cybro_alarm_list .list .alarm.active .col_status,
+.cybro_alarm_list .list .event.active .col_status {
+}
+
+.cybro_alarm_list .list .alarm.active .col_status.active,
+.cybro_alarm_list .list .event.active .col_status.active {
+    font-weight: bold;
+    color: red;
+}
+
+.cybro_alarm_list .list tr.hover_active
+/*.cybro_alarm_list .list .hover_active.alarm.not_ack td */{
+    background-color: #FDFDE4;
+}
+
+.cybro_alarm_list .list .event {
+}
+
+.cybro_alarm_list .list .event.active {
+}
+
+.cybro_alarm_list .navig {
+    margin-bottom: 10px;
+    text-align: right;
+}
+
+.cybro_alarm_list .navig .page_count,
+.cybro_alarm_list .navig .filter_select {
+    float: left;
+    text-align: left;
+    margin-right: 10px;
+}
+
+#timeplot_fullscreen {
+    padding: 20px;
+}
+
+/******** Bitlist ********/
+
+.cybro_bitlist > img {
+	border: 2px solid transparent;
+	border-radius: 5px;
+}
+
+.cybro_bitlist.write_enabled > img {
+	cursor: pointer;
+}
+
+.cybro_bitlist .active {
+    border: 2px solid red;
+    /*border-color: red;*/
+}
+
+/******** Textlist ********/
+
+.cybro_textlist {
+}
+
+.cybro_textlist .active {
+    border: 2px solid red;
+    /*border-color: red;*/
+}

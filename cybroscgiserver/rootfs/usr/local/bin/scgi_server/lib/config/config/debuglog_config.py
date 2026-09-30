@@ -1,19 +1,24 @@
-from configparser import ConfigParser
 from dataclasses import dataclass
 from typing import Tuple
+
+from lib.config.ini_config_parser import IniConfigParser
 
 
 @dataclass(frozen=True)
 class DebugLogConfig:
+    enabled: bool
+    log_to_file: bool
+    verbose_level: str
+    max_log_file_size_kb: int
+    max_log_backup_count: int
+
     @classmethod
-    def create(
-            cls,
-            enabled: bool,
-            log_to_file: bool,
-            verbose_level: str,
-            max_log_file_size_kb: int,
-            max_log_backup_count: int
-    ):
+    def create(cls,
+               enabled: bool,
+               log_to_file: bool,
+               verbose_level: str,
+               max_log_file_size_kb: int,
+               max_log_backup_count: int):
         return DebugLogConfig(
             enabled,
             log_to_file,
@@ -21,12 +26,6 @@ class DebugLogConfig:
             max_log_file_size_kb,
             max_log_backup_count
         )
-
-    enabled: bool
-    log_to_file: bool
-    verbose_level: str
-    max_log_file_size_kb: int
-    max_log_backup_count: int
 
     def props(self) -> Tuple[bool, bool, str, int, int]:
         return (
@@ -38,7 +37,7 @@ class DebugLogConfig:
         )
 
     @classmethod
-    def load(cls, cp: ConfigParser, default: 'Config'):
+    def load(cls, icp: IniConfigParser, default: 'DebugLogConfig'):
         section = "DEBUGLOG"
 
         (
@@ -50,11 +49,9 @@ class DebugLogConfig:
         ) = default.props()
 
         return cls.create(
-            cp.getboolean(section, "enabled", fallback=enabled),
-            cp.getboolean(section, "log_to_file", fallback=log_to_file),
-            cp.get(section, "verbose_level", fallback=verbose_level),
-            cp.getint(section, "max_file_size_kb",
-                      fallback=max_log_file_size_kb),
-            cp.getint(section, "max_backup_count",
-                      fallback=max_log_backup_count),
+            icp.get_boolean(section, "enabled", enabled),
+            icp.get_boolean(section, "log_to_file", log_to_file),
+            icp.get(section, "verbose_level", verbose_level),
+            icp.get_int(section, "max_file_size_kb", max_log_file_size_kb),
+            icp.get_int(section, "max_backup_count", max_log_backup_count)
         )

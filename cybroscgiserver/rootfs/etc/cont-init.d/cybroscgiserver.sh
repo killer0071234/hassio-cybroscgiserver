@@ -40,6 +40,11 @@ else
     cp "$(bashio::config 'configuration_file')" /usr/local/bin/scgi_server/config.ini
 
     # ethernet settings
+    # controllers send push messages to port 8442, so don't use a dynamic port
+    if [[ -z "$($crudini --get /usr/local/bin/scgi_server/config.ini ETH port 2>/dev/null)" ]]; then
+        bashio::log.info "ETH port not set, using 8442"
+        $crudini --set /usr/local/bin/scgi_server/config.ini ETH port 8442
+    fi
     $crudini --set /usr/local/bin/scgi_server/config.ini ETH autodetect_enabled true
     if bashio::config.has_value "autodetect_address"; then autodetect_address=$(bashio::config 'autodetect_address'); else autodetect_address=""; fi
     bashio::log.info "autodetect_address: ${autodetect_address}"
@@ -53,7 +58,12 @@ else
     # verbose level
     if bashio::config.has_value "verbose_level"; then verbose_level=$(bashio::config 'verbose_level'); else verbose_level="ERROR"; fi
     bashio::log.info "configured verbose_level: ${verbose_level}"
-    $crudini --set /usr/local/bin/scgi_server/config.ini CACHE verbose_level "$verbose_level"
+    $crudini --set /usr/local/bin/scgi_server/config.ini DEBUGLOG enabled true
+    $crudini --set /usr/local/bin/scgi_server/config.ini DEBUGLOG verbose_level "$verbose_level"
+    # log goes to stdout already, the log file is not needed
+    $crudini --set /usr/local/bin/scgi_server/config.ini DEBUGLOG log_to_file false
+    # older versions of this add-on wrote verbose_level into the wrong section
+    $crudini --del /usr/local/bin/scgi_server/config.ini CACHE verbose_level
 
 
     # copy config file to addon config folder

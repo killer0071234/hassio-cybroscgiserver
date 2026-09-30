@@ -1,9 +1,7 @@
 # scgi server
-rx==3.2.0
 watchdog==4.0.0
 WMI==1.4.9
 psutil==5.9.8
-python-can==4.3.1
 
 # mqtt client
 paho-mqtt==2.0.0

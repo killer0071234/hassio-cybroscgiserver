@@ -75,7 +75,7 @@ class CommandFrameUtil:
 
     @classmethod
     def create_push_ack(cls) -> CommandFrame:
-        data = struct.pack("<2H", cls.PUSH_ACK_ADDRESS, 1)
+        data = struct.pack("<2HB", cls.PUSH_ACK_ADDRESS, 1, 1)
         return cls._create_request_with_command(Command.WRITE_DATA, data)
 
     @classmethod

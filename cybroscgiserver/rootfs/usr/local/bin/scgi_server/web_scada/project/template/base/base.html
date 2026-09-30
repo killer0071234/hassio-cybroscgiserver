@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{% block title %}Solar Plant Supervisory System{% endblock %} :: {{ get_site_name }}</title>
+    <meta name="description" content="{% block page_description %}{{ get_site_name }} - {{ get_head_caption }}{% endblock %}" />
+    <meta name="copyright" content="(c) 2009-2013 Cybrotech" />
+    <meta http-equiv="imagetoolbar" content="false" />
+    <meta http-equiv="imagetoolbar" content="no" />
+    <meta name="robots" content="index, follow" />
+    <meta name="google-site-verification" content="{{ get_google_webmaster_tools_code }}" />
+    <link rel="shortcut icon" href="{{ get_shortcut_icon }}" />
+    <link href="{% static 'inc/core.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'inc/print.css' %}" rel="stylesheet" type="text/css" media="print" />
+    <script src="{% static 'inc/js/jquery-3.7.1.min.js' %}" type="text/javascript"></script>
+    <script src="{% static 'inc/js/common.js' %}" type="text/javascript"></script>
+    {% block extra_head %}{% endblock %}
+    <link href="{% static 'inc/custom.css' %}" rel="stylesheet" type="text/css" />
+<!--[if IE]>
+    <link href="{% static 'inc/ie.css' %}" rel="stylesheet" type="text/css" />
+<![endif]-->
+</head>
+<body>
+    {% block body_content %}
+    {% endblock %}>
+</body>
+</html>

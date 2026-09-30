@@ -1,0 +1,77 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}Manage plants{% endblock %}
+
+{% block main_content %}
+<h1>Manage plants</h1>
+{% if request.user.permissions.can_manage_plants %}
+<div class="toolbar">
+    <a href="/plant/edit/"><img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Create new plant</a>
+</div>
+{% endif %}
+
+<table class="content_items" cellspacing="0px">
+    <tr>
+        <th class="col1">Plant name</th>
+        <th style="width: 300px;">Administrators</th>
+        <th style="width: 80px; text-align: center;">Properties</th>
+        <th colspan="2" style="text-align: center;">Order</th>
+        <th style="width: 50px; text-align: center;">Public</th>
+        <th style="width: 50px; text-align: center;">Delete</th>
+    </tr>
+{% for item in items %}
+    <tr class="hover_row">
+        <td class="col1">
+            <a href="/plant/page_list/{{ item.id }}/" style="display: block;" rel="{{ item.format_name }}" title="Edit pages">{{ item.format_name }}</a>
+        </td>
+        <td>
+        {% for user in item.admins.all %}
+        {{ user.format_name }}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+            None
+        {% endfor %}
+        </td>
+        <td style="text-align: center;">
+            <a href="/plant/edit/{{ item.id }}/">
+                <img src="{% static 'img/ico_document_pencil.png' %}" alt="" title="Edit properties" />
+            </a>
+        </td>
+        <td style="width: 22px; text-align: right;">
+            {% if not forloop.first %}
+            <a href="/plant/change_order/up/{{ item.id }}/">
+                <img src="{% static 'img/ico_move_up.png' %}" alt="" title="Move up" />
+            </a>
+            {% endif %}
+        </td>
+        <td style="width: 22px; text-align: left;">
+            {% if not forloop.last %}
+            <a href="/plant/change_order/dn/{{ item.id }}/">
+                <img src="{% static 'img/ico_move_dn.png' %}" alt="" title="Move down" />
+            </a>
+            {% endif %}
+        </td>
+        <td style="text-align: center;">
+            <a href="/plant/toggle_public/{{ item.id }}/" title="Make {% if item.public %}private{% else %}public{% endif %}">
+                <img src="{% if item.public %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+            </a>
+        </td>
+        <td style="text-align: center;">
+            <a href="/plant/delete/{{ item.id }}/" class="delete_item" rel="{{ item.name }}">
+                <img src="{% static 'img/ico_minus.png' %}" alt="" title="Delete" />
+            </a>
+        </td>
+    </tr>
+{% endfor %}
+</table>
+
+<script type="text/javascript">
+$(function () {
+    $(".delete_item").click(function () {
+        const name = $(this).attr("rel");
+        return confirm('Delete plant "' + name + '"?');
+    });
+
+});
+</script>
+
+{% endblock %}

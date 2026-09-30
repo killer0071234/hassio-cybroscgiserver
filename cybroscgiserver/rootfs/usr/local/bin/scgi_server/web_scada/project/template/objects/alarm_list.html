@@ -1,0 +1,137 @@
+{% if code == "html" %}
+<div id="{{ id }}" class="cybro_{{ type }}">
+    <input type="hidden" name="nad" value="{{ controller }}" />
+    <input type="hidden" name="items" value="{{ items }}" />
+    <input type="hidden" name="download" value="{{ download }}" />
+    <input type="hidden" name="page_index" value="0" />
+    <div class="content">
+    </div>
+</div>
+
+{% elif code == "tag_update_func" %}
+var alarm_update_suspended = false;
+var alarm_update_suspended_timeout = new Date().getTime() + 10000;
+
+function UpdateAlarmList(id, page) {
+    if (!alarm_update_suspended || new Date().getTime() > alarm_update_suspended_timeout) {
+        if (alarm_update_suspended) {
+            $(".stop_refresh").blur();
+        }
+        let prop = GetObjectProperties(id);
+        let rw_access = {% if rw_access %}1{% else %}0{% endif %};
+
+        let filter_type = $("#" + id + " .filter_type").val();
+        if (filter_type == null)
+            filter_type = "all";
+
+        let filter_activity = $("#" + id + " .filter_activity").val();
+        if (filter_activity == null)
+            filter_activity = "all";
+
+        let params = new Array();
+        params.push(plant_id);
+        params.push(prop["nad"].length != 0 ? prop["nad"] : "0");
+        params.push(filter_type);
+        params.push(filter_activity);
+        params.push(prop["items"]);
+        params.push(page);
+        params.push(rw_access);
+        params.push(prop["download"]);
+        $("#" + id + " .content").load("/service/alarms/get/" + params.join("/") + "/");
+    }
+}
+
+{% elif code == "tag_update_code" %}
+var page_index = parseInt($("#{{ id }} .page_index").val()) - 1;
+if (page_index == 0)
+    UpdateAlarmList("{{ id }}", page_index);
+
+{% elif code == "page_load_init" %}
+UpdateAlarmList("{{ id }}", 0);
+
+{% elif code == "init_jq_binding" %}
+$("#{{ id }}").delegate(".alarm_ack", "click", function() {
+{% if rw_access %}
+    let alarm_id = $(this).attr("rel");
+    let container = $(this).parents(".cybro_{{ type }}");
+    let id = $(container).attr("id");
+    let prop = GetObjectProperties(id);
+
+    $(this).parent().load("/service/alarms/ack/" + alarm_id + "/");
+    $(this).parent().parent().removeClass("not_ack");
+    $(this).parent().parent().removeClass("ack");
+{% endif %}
+
+    return false;
+});
+
+$("#{{ id }}").delegate(".jump_to_page", "click", function() {
+    if ($(this).hasClass("disabled"))
+        return false;
+
+    let container = $(this).parents(".cybro_{{ type }}");
+    let id = $(container).attr("id");
+    let page = $(this).attr("rel");
+    UpdateAlarmList(id, page)
+
+    return false;
+});
+
+$("#{{ id }}").delegate(".hover_row", "mouseenter", function() {
+    $(this).addClass("hover_active");
+});
+
+$("#{{ id }}").delegate(".hover_row", "mouseleave", function() {
+    $(this).removeClass("hover_active");
+});
+
+$("#{{ id }}").delegate(".button", "mouseenter", function() {
+    $(this).addClass("button_hover");
+});
+
+$("#{{ id }}").delegate(".button", "mouseleave", function() {
+    $(this).removeClass("button_hover");
+});
+
+$("#{{ id }}").delegate(".download_csv_data", "click", function() {
+    let container = $(this).parents(".cybro_{{ type }}");
+    let id = $(container).attr("id");
+    let prop = GetObjectProperties(id);
+    let page = $(this).attr("rel");
+    let filter_type = $("#" + id + " .filter_type").val();
+    let filter_activity = $("#" + id + " .filter_activity").val();
+
+    let params = new Array();
+    params.push(plant_id);
+    params.push(prop["nad"].length != 0 ? prop["nad"] : "0");
+    params.push(filter_type);
+    params.push(filter_activity);
+    params.push(prop["items"]);
+    params.push(page);
+
+    document.location = "/service/alarms/download/" + params.join("/") + "/";
+});
+
+$("#{{ id }}").delegate(".cybro_alarm_list .page_index", "change", function() {
+    var container = $(this).parents(".cybro_alarm_list");
+    var id = $(container).attr("id");
+    alarm_update_suspended = false;
+    UpdateAlarmList(id, parseInt($(this).val()) - 1);
+});
+
+$("#{{ id }}").delegate(".cybro_alarm_list .filter", "change", function() {
+    var container = $(this).parents(".cybro_alarm_list");
+    var id = $(container).attr("id");
+    alarm_update_suspended = false;
+    UpdateAlarmList(id, 0);
+});
+
+$("#{{ id }}").delegate(".stop_refresh", "focusin", function() {
+    alarm_update_suspended = true;
+    alarm_update_suspended_timeout = new Date().getTime() + 10000;
+});
+
+$("#{{ id }}").delegate(".stop_refresh", "focusout", function() {
+    alarm_update_suspended = false;
+});
+{% endif %}

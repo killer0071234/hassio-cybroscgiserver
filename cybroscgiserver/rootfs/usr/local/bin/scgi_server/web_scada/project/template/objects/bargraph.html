@@ -1,0 +1,47 @@
+{% if code == "html" %}
+<div id="{{ id }}" class="cybro_{{ type }} {{ barstyle }}" title="{{ var }}" style="{% if barstyle == "horizontal" %}width:{% else %}height:{% endif %}{{ size }}px;">
+    {% if barstyle == "horizontal" %}
+        <div class="value" style="background-color: {{ color }}; width: 0px; height: {{ tickness }}px;"></div>
+        <div class="bg" style="background-color: {{ bgcolor }}; width: 100%; height: {{ tickness }}px;"></div>
+    {% else %}
+        <div class="bg" style="background-color: {{ bgcolor }}; height: 100%; width: {{ tickness }}px;"></div>
+        <div class="value" style="background-color: {{ color }}; height: 0px; width: {{ tickness }}px;"></div>
+    {% endif %}
+</div>
+
+{% elif code == "tag_update_func" %}
+function UpdateBargraph(object_id, tag_name, description, value, style, min, max, size)
+{
+    changeable = (style == "vertical") ? "height" : changeable = "width";
+
+    if (!isNaN(value)) {
+        if (max < min) {
+            var tmp = max;
+            max = min;
+            min = tmp;
+            value = min - value;
+        }
+
+        value = (value < min) ? min : (value > max) ? max : value;
+    } else {
+        value = 0;
+    }
+
+    var bar_size = size * (value - min) / (max - min);
+    var bg_size = size - bar_size;
+
+    if (style == "vertical") {
+        $("#" + object_id + " .value").css(changeable, bar_size + "px");
+        $("#" + object_id + " .bg").css(changeable, bg_size + "px");
+    } else {
+        $("#" + object_id + " .value").css(changeable, bar_size + "px");
+        $("#" + object_id + " .bg").css(changeable, bg_size + "px");
+    }
+
+    SetObjectTitle($("#" + object_id), tag_name, description);
+}
+
+{% elif code == "tag_update_code" %}
+UpdateBargraph("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], "{{ barstyle }}", {{ min }}, {{ max }}, {{ size }});
+
+{% endif %}

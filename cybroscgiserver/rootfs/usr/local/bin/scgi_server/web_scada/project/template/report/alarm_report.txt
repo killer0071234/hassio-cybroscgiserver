@@ -1,0 +1,4 @@
+Alarm report for plant {{ plant.name }} from {{ alarm_report.get_local_timestamp_from|date:"Y-m-d H:i:s" }} to {{ alarm_report.get_local_timestamp_to|date:"Y-m-d H:i:s" }}
+  Raised              Gone                Tag                                      Message                                            Status Acknowledged
+{% for alarm in alarm_report.alarms %}{% if alarm.type == 1 %}A{% else %}E{% endif %} {% if alarm.timestamp_raise %}{{ alarm.get_local_timestamp_raise|date:"Y-m-d H:i:s" }}{% else %}                   {% endif %} {% if alarm.timestamp_gone %}{{ alarm.get_local_timestamp_gone|date:"Y-m-d H:i:s" }}{% else %}-                  {% endif %} {{ alarm.tag|stringformat:"-40s" }} {{ alarm.message|stringformat:"-50s" }} {% if alarm.timestamp_gone %}gone  {% else %}active{% endif %} {% if alarm.timestamp_ack %}{{ alarm.get_local_timestamp_ack|date:"Y-m-d H:i:s" }}{% else %}-                  {% endif %}
+{% endfor %}

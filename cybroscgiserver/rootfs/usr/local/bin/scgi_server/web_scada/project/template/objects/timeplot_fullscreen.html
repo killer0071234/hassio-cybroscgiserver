@@ -1,0 +1,50 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}{{ page.format_name }}{% endblock %}
+{% block page_description %}{{ page.description }}{% endblock %}
+
+{% block extra_head %}
+<link href="{% static 'inc/objects.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'inc/page.css' %}" rel="stylesheet" type="text/css" />
+
+<style type="text/css">
+    body {
+        background-color: white;
+    }
+</style>
+
+{% endblock %}
+
+{% block body_content %}
+<div id="timeplot_fullscreen">
+    {{ content|safe }}
+</div>
+
+<script type="text/javascript">
+    function GetObjectProperties(id)
+    {
+        let prop = [];
+
+        $("#" + id + " [type='hidden']").each(function(i) {
+            prop[$(this).attr("name")] = $(this).attr("value");
+        });
+
+        return prop;
+    }
+
+    {{ tag_update_func|safe }}
+
+    $(function() {
+        {{ page_load_init|safe }}
+
+        $(window).resize(function() {});
+        $(".fullscreen_close").click(function() {
+            self.close();
+        });
+
+        attach_common_jq_events();
+    });
+</script>
+
+{% endblock %}

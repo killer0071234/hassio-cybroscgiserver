@@ -1,0 +1,10 @@
+{% load static %}
+
+<tr class="hover_row admin_item" id="admin_item_{{ user.id }}" rel="{{ user.id }}">
+    <td class="col1">{{ user.format_name }}</td>
+    <td class="col4">
+        <a href="#" class="delete_admin" rel="{{ user.id }}" name="{{ user.format_name }}">
+            <img src="{% static 'img/ico_minus.png' %}" alt="" title="delete" />
+        </a>
+    </td>
+</tr>

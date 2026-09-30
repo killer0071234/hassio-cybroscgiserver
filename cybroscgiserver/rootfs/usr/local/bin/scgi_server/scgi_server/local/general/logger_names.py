@@ -4,7 +4,6 @@ from enum import Enum, auto
 class LoggerNames(Enum):
     TCP = auto()
     UDP = auto()
-    CAN = auto()
     PUSH = auto()
     ABUS = auto()
     PLC_INFO = auto()

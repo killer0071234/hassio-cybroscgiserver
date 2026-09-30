@@ -1,0 +1,54 @@
+apache.conf
+-----------
+
+<VirtualHost *:80>
+  # ServerName solarserver:80
+  # solar cybro web application static files directory
+  Alias /static/ /usr/bin/cybrotech/app/web_scada/staticroot/
+  <directory "/usr/bin/cybrotech/app/web_scada/staticroot/">
+      Order deny,allow
+      Require all granted
+  </directory>
+  # solar cybro web application data directory
+  Alias /data/ /usr/bin/cybrotech/app/web_scada/data/
+  <directory "/usr/bin/cybrotech/app/web_scada/data/">
+      Order deny,allow
+      Require all granted
+  </directory>
+
+  WSGIDaemonProcess solar python-home=/usr/bin/cybrotech/env python-path=/usr/bin/cybrotech/app/web_scada
+  WSGIProcessGroup solar
+
+  # location of solar cybro wsgi startup file
+  WSGIScriptAlias / /usr/bin/cybrotech/app/web_scada/wsgi.py
+  <directory "/usr/bin/cybrotech/app/web_scada/">
+      Order deny,allow
+      Require all granted
+  </directory>
+</VirtualHost>
+
+
+Dockerfile
+----------
+
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get -y upgrade
+
+RUN apt-get -y install apache2 libapache2-mod-wsgi-py3 python3.12 python3.12-dev python3.12-venv python3-pip pkg-config
+
+RUN mkdir -p /usr/bin/cybrotech/app/
+
+RUN python3.12 -m venv /usr/bin/cybrotech/env
+
+COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+
+COPY app/ /usr/bin/cybrotech/app/
+
+RUN /usr/bin/cybrotech/env/bin/pip install -U -r /usr/bin/cybrotech/app/requirements.txt
+
+RUN chown -R www-data:www-data /usr/bin/cybrotech
+
+EXPOSE 80
+
+CMD ["apachectl", "-D", "FOREGROUND"]

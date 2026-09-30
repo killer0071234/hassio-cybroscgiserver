@@ -1,0 +1,72 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}{% if item.id %}Edit controller - {{ item.nad }}{% else %}New controller{% endif %}{% endblock %}
+
+{% block main_content %}
+<div id="page_edit">
+    <h1>{% if item.id %}Edit controller - {{ item.nad }}{% else %}New controller{% endif %}</h1>
+
+    <div class="toolbar">
+        <a href="/controller/list/" id="cancel"><img src="{% static 'img/ico_signout.png' %}" class="ico" alt=""/>Back</a>
+        <a href="#" id="save"><img src="{% static 'img/ico_save.png' %}" class="ico" alt=""/>Save</a>
+    </div>
+
+    <form id="fm" method="post" action="/controller/edit/{% if item.id %}{{ item.id }}/{% endif %}">
+        <table class="edit">
+            <tr>
+                <td class="col1">NAD:</td>
+                <td class="col2">
+                    <input type="text" name="nad" id="nad" style="width: 100px;" value="{% if item.nad %}{{item.nad }}{% else %}{% endif %}" />
+                    <span class="err" id="err_nad" style="display: none;"></span>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">Location:</td>
+                <td class="col2"><input type="text" name="location" id="location" style="width: 300px;" value="{{item.location }}" /></td>
+            </tr>
+            <tr>
+                <td class="col1" style="vertical-align: top;">Function:</td>
+                <td class="col2">
+                    <textarea name="function" id="function" rows="5" cols="30" style="width: 300px;">{{ item.function }}</textarea>
+                </td>
+            </tr>
+        </table>
+
+    </form>
+</div>
+
+<script type="text/javascript">
+$(function() {
+    $("#save").click(function() {
+        let nad = $("#nad").val();
+
+        $("#err_nad").hide();
+
+        if (nad.length === 0 || nad.length > 12) {
+            $("#err_nad").text("Invalid NAD.").show();
+            return false;
+        }
+
+        {% if item.id %}
+        if (nad === "{{ item.nad }}") {
+            $("#fm").submit();
+            return false;
+        }
+        {% endif %}
+
+        $.get(
+            "/service/nad_valid/" + nad + "/",
+            function(data) {
+                if (data === "1") {
+                    $("#fm").submit();
+                } else {
+                    $("#err_nad").text("Invalid NAD.").show();
+                }
+            }
+        );
+
+        return false;
+    });
+});
+</script>
+{% endblock %}

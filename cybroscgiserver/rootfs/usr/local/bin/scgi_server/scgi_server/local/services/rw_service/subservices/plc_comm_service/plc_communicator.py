@@ -278,13 +278,13 @@ class PlcCommunicator:
                 new_program_datetime
             )
 
-            plc_head = await self._plc_client.read_plc_head()
-            if not self._is_plc_head_ok(plc_head):
-                raise self.PlcHeadError()
+        plc_head = await self._plc_client.read_plc_head()
+        if not self._is_plc_head_ok(plc_head):
+            raise self.PlcHeadError()
 
-            status = await self._plc_client.read_status()
-            if not self._is_status_ok(status):
-                raise self.PlcHeadError()
+        status = await self._plc_client.read_status()
+        if not self._is_status_ok(status):
+            raise self.PlcHeadError()
 
         return plc_head.code_crc
 

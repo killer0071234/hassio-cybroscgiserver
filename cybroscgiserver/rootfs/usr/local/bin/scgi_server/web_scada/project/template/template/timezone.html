@@ -1,0 +1,6 @@
+[
+{% for item in items %}
+{ "label": "{{ item.label }}", "value": "{{ item.value }}" }{% if not forloop.last %},
+{% endif %}
+{% endfor %}
+]

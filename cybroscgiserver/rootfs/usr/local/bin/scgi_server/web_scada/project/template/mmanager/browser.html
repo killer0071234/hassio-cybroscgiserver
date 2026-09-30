@@ -1,0 +1,203 @@
+{% load static %}
+<div id="mmanager">
+    <h1>Media manager</h1>
+
+    {% if rw_access %}
+        <div class="toolbar">
+            <a href="#" id="show_upload_file">
+                <img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Upload new file
+            </a>
+        </div>
+
+        <div id="upload_frame" style="display: none;">
+            <form id="fm_upload" method="post" enctype="multipart/form-data" action="/mmanager/list/">
+                <input type="hidden" name="file_count" id="file_count" value="1" />
+                <input type="hidden" name="operation" value="upload" />
+                <div id="upload_files">
+                    <input type="file" name="file_0" />
+                </div>
+                <button class="button" id="add_upload_file">Add another file</button>
+                <button class="button" id="btn_upload">Upload</button>
+            </form>
+        </div>
+    {% endif %}
+
+    {% if dirs or files or images or show_parent_dir %}
+    <form id="fm_filelist" method="post" enctype="multipart/form-data" action={% if edit_mode %}"/mmanager/list/"{% else %}"/mmanager/select_image/{{ plant_id }}/"{% endif %}>
+        <input type="hidden" name="operation" id="operation" value="filelist" />
+        <input type="hidden" name="param" id="param" value="" />
+        <input type="hidden" name="dir_count" value="{{ dir_count }}" />
+        <input type="hidden" name="file_count" value="{{ file_count }}" />
+        <input type="hidden" name="img_count" value="{{ img_count }}" />
+
+        <table class="content_items">
+            <tr>
+                <th style="width: 40px;">&nbsp;</th>
+                <th style="width: 100px; text-align: left;">Type</th>
+                <th style="text-align: left;">File name</th>
+                <th style="width: 100px; text-align: right;">Size</th>
+                <th style="width: 180px; text-align: center;">Preview</th>
+            </tr>
+            {% if show_parent_dir %}
+            <tr class="dir">
+                <td>&nbsp;</td>
+                <td>parent</td>
+                <td>
+                    <a href="#" class="change_dir" rel="{{ parent_dir }}">..</a>
+                </td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {% endif %}
+            {% for f in dirs %}
+            <tr class="dir">
+                <td>&nbsp;</td>
+                <td>directory</td>
+                <td>
+                    <a href="#" class="change_dir" rel="{{ f.filepath }}">{{ f.filename }}</a>
+                </td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {% endfor %}
+
+            {% if edit_mode %}
+            {% for f in files %}
+            <tr class="file" rel="{{ forloop.counter0 }}">
+                <td style="text-align: center;">
+                {% if rw_access %}
+                    <input type="checkbox" class="f_sel" name="f_sel_{{ forloop.counter0 }}" id="f_sel_{{ forloop.counter0 }}" />
+                    <input type="hidden" name="f_name_{{ forloop.counter0 }}" value="{{ f.filename }}" />
+                {% else %}
+                    &nbsp;
+                {% endif %}
+                </td>
+                <td>file</td>
+                <td>
+                    <a href="{{ f.link }}" rel="external">{{ f.filename }}</a>
+                </td>
+                <td style="text-align: right;">{{ f.size }}</td>
+                <td>&nbsp;</td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+
+            {% for f in images %}
+            <tr class="image" rel="{{ forloop.counter0 }}">
+                <td style="text-align: center;">
+                {% if rw_access %}
+                    <input type="checkbox" class="f_sel" name="img_sel_{{ forloop.counter0 }}" id="img_sel_{{ forloop.counter0 }}" />
+                    <input type="hidden" name="img_name_{{ forloop.counter0 }}" value="{{ f.filename }}" />
+                {% else %}
+                    &nbsp;
+                {% endif %}
+                </td>
+                <td>image</td>
+                <td>
+                    {% if edit_mode %}
+                    <a href="{{ f.link }}" rel="external">{{ f.filename }}</a>
+                    {% else %}
+                    <a href="#" class="select_image" rel="{{ f.link }}">{{ f.filename }}</a>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">{{ f.size }}</td>
+                <td style="text-align: center;">
+                    {% if edit_mode %}
+                        <a href="{{ f.link }}" rel="external"><img src="{{ f.get_thumb }}" alt="" class="border" /></a>
+                    {% else %}
+                        <a href="#" class="select_image" rel="{{ f.link }}"><img src="{{ f.get_thumb }}" alt="" class="border" /></a>
+                    {% endif %}
+                </td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        {% if rw_access %}
+        {% if files or images %}
+        <div class="cmd">
+            <a href="#" id="check_all">Check all</a> /
+            <a href="#" id="uncheck_all">Uncheck all</a>
+            <button class="button" id="btn_delete" style="margin-left: 20px;">Delete selected</button>
+        </div>
+        {% endif %}
+        {% endif %}
+    </form>
+    {% endif %}
+</div>
+
+<script type="text/javascript">
+$(function() {
+    $(".change_dir").click(function() {
+        $("#operation").val("change_dir");
+        $("#param").val($(this).attr("rel"));
+        $("#fm_filelist").submit();
+        return false;
+    });
+
+    {% if rw_access %}
+    $("#show_upload_file").click(function() {
+        $(this).hide();
+        $("#upload_frame").slideDown();
+        return false;
+    });
+
+    $("#add_upload_file").click(function() {
+        let cnt = parseInt($("#file_count").val());
+        $("#file_count").val(cnt + 1)
+        $("#upload_files").append('<input type="file" name="file_' + cnt + '" />');
+        return false;
+    });
+
+    $(".f_sel").click(function(event) {
+        event.stopPropagation();
+    });
+
+    $(".file").click(function() {
+        let id = $(this).attr("rel");
+        $("#f_sel_" + id).attr("checked", !$("#f_sel_" + id).attr("checked"));
+    });
+
+    $(".image").click(function() {
+        let id = $(this).attr("rel");
+        $("#img_sel_" + id).attr("checked", !$("#img_sel_" + id).attr("checked"));
+    });
+
+    $("#check_all").click(function() {
+        $(".f_sel").attr("checked", true);
+        return false;
+    });
+
+    $("#uncheck_all").click(function() {
+        $(".f_sel").attr("checked", false);
+        return false;
+    });
+
+    $("#btn_upload").click(function() {
+        $("#fm_upload").submit();
+        return false;
+    });
+
+    $("#btn_delete").click(function() {
+        if (confirm("Delete selected files?"))
+            $("#fm_filelist").submit();
+        return false;
+    });
+    {% endif %}
+
+    {% if edit_mode %}
+    $("a").each(function(i) {
+        let rel = $(this).attr("rel");
+        if ($(this).attr("href") !== "" && rel === "external")
+            $(this).attr("target", "_blank");
+    }).click(function(event) {
+        event.stopPropagation();
+    });
+    {% else %}
+    $(".select_image").click(function() {
+        window.opener.onImageSelect($(this).attr("rel"));
+        self.close();
+        return false;
+    });
+    {% endif %}
+});
+</script>

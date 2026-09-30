@@ -1,0 +1,127 @@
+================================================================================
+                   CybroWebScada (c) 2010-2024 Cybrotech
+================================================================================
+
+Installation procedure for web scada on Ubuntu 24.04 LTS
+
+Install Ubuntu server 24.04 LTS
+
+- Profile setup
+  user: solar
+  pass: <pass>
+- SSH Setup
+  - Install optional Open SSH server
+- Optional settings
+  $ sudo apt purge unattended-upgrades
+  $ sudo systemctl disable cloud-init
+- Everything else as default or as desired
+
+Install CybroEdgeToolkit
+
+- Login as: solar
+- Password: <pass>
+- Update:
+  $ sudo apt update
+  $ sudo apt upgrade
+
+- Install packages required by Toolkit
+  $ sudo apt install python3-dev python3-venv python3-pip pkg-config build-essential
+
+- Install MariaDb database
+  $ sudo apt install mariadb-server
+  $ sudo mysql_secure_installation
+  - Set sql-mode
+    $ sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+  - Add below line at the end of the section [mysqld]:
+    sql_mode = 'ONLY_FULL_GROUP_BY,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+
+- Make Toolkit home directory and copy Toolkit files
+  $ sudo mkdir /usr/local/bin/cybrotech
+  $ sudo chown solar:solar /usr/local/bin/cybrotech
+  - copy Toolkit files to server into /usr/local/bin/cybrotech/ folder (by WinSCP or psftp or whatever)
+
+- Install Django
+  $ python3 -m venv /usr/local/bin/cybrotech
+  $ source /usr/local/bin/cybrotech/bin/activate
+  $ pip install -U -r /usr/local/bin/cybrotech/app/requirements.txt
+  $ cd /usr/local/bin/cybrotech/app/web_scada && python manage.py collectstatic
+
+- Install Apache and acl
+  $ sudo apt install apache2 libapache2-mod-wsgi-py3 acl
+
+- Install phpmyadmin (optional)
+  $ sudo apt install phpmyadmin libapache2-mod-php
+
+- Apache set up
+  - Set virtual host:
+    $ sudo nano /etc/apache2/sites-enabled/000-default.conf
+  - copy below text instead of 1st virtual host:
+
+  <VirtualHost *:80>
+      #ServerName solarserver:80
+      # solar cybro web application static files directory
+      Alias /static/ /usr/local/bin/cybrotech/app/web_scada/staticroot/
+      <directory "/usr/local/bin/cybrotech/app/web_scada/staticroot/">
+          Order deny,allow
+          Require all granted
+      </directory>
+      # solar cybro web application data directory
+      Alias /data/ /usr/local/bin/cybrotech/app/web_scada/data/
+      <directory "/usr/local/bin/cybrotech/app/web_scada/data/">
+          Order deny,allow
+          Require all granted
+      </directory>
+      WSGIDaemonProcess solar python-home=/usr/local/bin/cybrotech/ python-path=/opt/solar/app/solar_cybro/
+      WSGIProcessGroup solar
+      # location of solar cybro wsgi startup file
+      WSGIScriptAlias / /usr/local/bin/cybrotech/app/web_scada/wsgi.py
+      <directory "/usr/local/bin/cybrotech/app/web_scada/">
+          Order deny,allow
+          Require all granted
+      </directory>
+  </VirtualHost>
+
+  - Restart Apache
+    $ sudo systemctl restart apache2
+
+- Web scada database setup
+  $ sudo mysql -p
+
+- Create database by running the following SQL commands:
+  CREATE DATABASE `solar` DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+  CREATE USER 'solar'@'localhost' IDENTIFIED WITH mysql_native_password AS PASSWORD("<pass>");
+  GRANT ALL PRIVILEGES ON *.* TO 'solar'@'localhost' IDENTIFIED BY '<pass>' WITH GRANT OPTION MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
+  GRANT ALL PRIVILEGES ON `solar`.* TO 'solar'@'localhost';
+
+- Granting Apache access to data directory
+  $ export SCADAHOME=/usr/local/bin/cybrotech/app
+  $ sudo setfacl -m u:www-data:--x $SCADAHOME
+  $ sudo setfacl -R -m u:www-data:--- $SCADAHOME
+  $ sudo setfacl -R -m u:www-data:rwx $SCADAHOME
+  $ sudo setfacl -R -m d:u:www-data:rwx $SCADAHOME
+  $ sudo chmod g+s $SCADAHOME
+  $ sudo setfacl -R -m d:u:solar:rwx $SCADAHOME
+
+- Edit crontab
+  $ crontab -e
+  - Add following lines to automatically start reporting engine:
+    0 * * * *  /usr/local/bin/cybrotech/bin/python /usr/local/bin/cybrotech/app/web_scada/manage.py create_reports &>/dev/null
+    0 * * * *  /usr/local/bin/cybrotech/bin/python /usr/local/bin/cybrotech/app/web_scada/manage.py send_reports &>/dev/null
+
+- Edit <pass> in configuration files:
+  - Edit /usr/local/bin/cybrotech/app/web_scada/settings/settings_local.py
+    $ sudo nano /usr/local/bin/cybrotech/app/web_scada/settings/settings_local.py
+    - change DATABASE_PASSWORD = 'solar' with <pass>
+
+- Configure django and database
+    $ /usr/local/bin/cybrotech/bin/python /usr/local/bin/cybrotech/app/web_scada/manage.py migrate
+    $ /usr/local/bin/cybrotech/bin/python /usr/local/bin/cybrotech/app/web_scada/manage.py collectstatic
+    $ mysql -p < /usr/local/bin/cybrotech/app/web_scada/doc/db_initial_data.sql
+
+- Restart Apache
+  $ sudo systemctl restart apache2
+
+- Web scada setup
+  - Browse to http://ip_adress to start web scada
+  - Log in: u:admin / p:admin
+  - Change admin password to <pass>
