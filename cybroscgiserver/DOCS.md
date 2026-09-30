@@ -1,25 +1,25 @@
-# Home Assistant Community Add-on: Cybro Scgi Server
+# Home Assistant Community App: Cybro Scgi Server
 
 Communication gateway between Home Assistant and cybro PLCs.
 Based on CybroScgiServer v3.3.1.
 
 ## Installation
 
-The installation of this add-on is pretty straightforward and not different in
-comparison to installing any other Home Assistant add-on.
+The installation of this app is pretty straightforward and not different in
+comparison to installing any other Home Assistant app.
 
-1. Click the Home Assistant My button below to open the add-on on your Home
+1. Click the Home Assistant My button below to open the app on your Home
    Assistant instance.
 
-   [![Open this add-on in your Home Assistant instance.][addon-badge]][addon]
+   [![Open this app in your Home Assistant instance.][addon-badge]][addon]
 
-1. Click the "Install" button to install the add-on.
-1. Start the "CybroScgiServer" add-on
-1. Check the logs of the "CybroScgiServer" add-on to see if everything went well.
+1. Click the "Install" button to install the app.
+1. Start the "CybroScgiServer" app
+1. Check the logs of the "CybroScgiServer" app to see if everything went well.
 
 ## Configuration
 
-**Note**: _Remember to restart the add-on when the configuration is changed._
+**Note**: _Remember to restart the app when the configuration is changed._
 
 ### Option: `configuration_file` (required)
 
@@ -40,7 +40,7 @@ Receive and acknowledge push messages sent by controllers
 
 ### Option: `verbose_level` (optional)
 
-The `verbose_level` option controls the level of log output by the addon and can
+The `verbose_level` option controls the level of log output by the app and can
 be changed to be more or less verbose, which might be useful when you are
 dealing with an unknown issue. Possible values are:
 
@@ -48,7 +48,7 @@ dealing with an unknown issue. Possible values are:
 - `INFO`: Normal (usually) interesting events.
 - `WARNING`: Exceptional occurrences that are not errors.
 - `ERROR`: Runtime errors that do not require immediate action.
-- `CRITICAL`: Something went terribly wrong. Add-on becomes unusable.
+- `CRITICAL`: Something went terribly wrong. App becomes unusable.
 
 Please note that each level automatically includes log messages from a
 more severe level, e.g., `DEBUG` also shows `INFO` messages. By default,
@@ -58,7 +58,7 @@ These log level also affects the log levels of cybro scgi server.
 
 ### Manual controller configuration (optional)
 
-To add a manual controller, edit the `cybroscgiserver_config.ini` file in your addon config folder.
+To add a manual controller, edit the `cybroscgiserver_config.ini` file in your app config folder.
 
 Example controller configuration entry for one controller (at the end of the file):
 
@@ -73,7 +73,7 @@ password =
 
 ## Known issues and limitations
 
-- This add-on does not support controller connections via can bus.
+- This app does not support controller connections via can bus.
 
 ## Changelog & Releases
 
