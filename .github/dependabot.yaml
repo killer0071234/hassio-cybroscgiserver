@@ -7,6 +7,11 @@ updates:
       interval: weekly
       time: "06:00"
   - package-ecosystem: "pip"
+    directory: "/cybroscgiserver/rootfs/usr/local/bin/scgi_server"
+    schedule:
+      interval: weekly
+      time: "06:00"
+  - package-ecosystem: "docker"
     directory: "/cybroscgiserver"
     schedule:
       interval: weekly

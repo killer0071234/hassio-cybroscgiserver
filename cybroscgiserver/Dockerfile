@@ -1,5 +1,5 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.0.1
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:21.0.7
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 
@@ -27,7 +27,7 @@ RUN \
         python3 \
     \
     && pip install iniparse==0.5 \
-    && pip install crudini==0.9.5 \
+    && pip install crudini==0.9.6 \
     && pip install -r /tmp/requirements.txt
 
 # Copy root filesystem

@@ -66,7 +66,7 @@ def run(
 
     running_loop = asyncio.new_event_loop()
     completed = running_loop.create_future()
-    exit_code = asyncio.Future()
+    exit_code = running_loop.create_future()
 
     try:
         def kill_run_loop():
