@@ -16,6 +16,9 @@ See ![repository readme][addon-repo-install] on how to install the cybro app in 
 
 - via Issues and pull requests in the Github repository
 
+To start and debug the app during development, see the
+[contributing guide](.github/CONTRIBUTING.md#development).
+
 ![Supports aarch64 Architecture][aarch64-shield]
 ![Supports amd64 Architecture][amd64-shield]
 

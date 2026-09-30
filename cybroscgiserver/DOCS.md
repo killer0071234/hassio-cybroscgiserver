@@ -71,6 +71,59 @@ password =
 
 **Note**: _Even if you don't use password on the controller you need the empty entry `password =`._
 
+## Troubleshooting
+
+### Check the log
+
+Open the **Log** tab of the app. After a normal start you should see the
+server listening on UDP port 8442 and TCP port 4000.
+
+For more details, set `verbose_level` to `DEBUG`, restart the app and check
+the log again. Set it back to `ERROR` when you are done, `DEBUG` creates a lot
+of output.
+
+### Check that the server answers
+
+Open this address in a browser (replace the IP with the one of your Home
+Assistant):
+
+```text
+http://192.168.0.2:4000/?sys.server_version
+```
+
+The server replies with a short XML document that contains its version. If
+the page does not load, the app is not running or port 4000 is blocked.
+
+To check a controller, replace `c1000` with your controller's
+serial number:
+
+```text
+http://192.168.0.2:4000/?c1000.sys.plc_status
+```
+
+The value is `ok` when the controller is reachable and running. `offline`
+means the server can't reach the controller, see [Ports](#ports) and
+[No controllers found](#no-controllers-found).
+
+### Ports
+
+The app uses the host network and needs these ports:
+
+- `4000/tcp`: requests from the Home Assistant integration.
+- `8442/udp`: communication with the controllers (including push messages).
+
+The controllers must be able to reach your Home Assistant on UDP port 8442. If
+they are in another network or behind a firewall, allow this port.
+
+### No controllers found
+
+Autodetect uses a broadcast in your local network. If no controller is found:
+
+1. Set `autodetect_address` to the broadcast address of the network where the
+   controllers are (e.g. `192.168.1.255`).
+1. If that doesn't help, add the controller manually, see
+   [Manual controller configuration](#manual-controller-configuration-optional).
+
 ## Known issues and limitations
 
 - This app does not support controller connections via can bus.
@@ -129,5 +182,5 @@ SOFTWARE.
 [addon]: https://my.home-assistant.io/redirect/supervisor_addon/?addon=85493909_cybroscgiserver&repository_url=https%3A%2F%2Fgithub.com%2Fkiller0071234%2Fha-addon-repository
 [killer0071234]: https://github.com/killer0071234
 [issue]: https://github.com/killer0071234/ha-addon-repository/issues
-[releases]: hhttps://github.com/killer0071234/ha-addon-repository/releases
-[semver]: http://semver.org/spec/v2.0.0.htm
+[releases]: https://github.com/killer0071234/ha-addon-repository/releases
+[semver]: http://semver.org/spec/v2.0.0.html
