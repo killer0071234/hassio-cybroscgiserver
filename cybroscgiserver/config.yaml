@@ -4,7 +4,7 @@ version: "dev"
 slug: cybroscgiserver
 name: CybroScgiServer
 description:
-  SCGI serer to communicate to PLCs from Cybrotech / Robotina
+  SCGI server to communicate to PLCs from Cybrotech / Robotina
   # yamllint disable-line rule:line-length
 url: https://github.com/killer0071234/hassio-cybroscgiserver
 codenotary: killer007@gmx.at
