@@ -107,7 +107,7 @@ which contain changes of this repository:
 - Update the version in `README.md`, `cybroscgiserver/.README.j2` and
   `cybroscgiserver/DOCS.md`, and add an entry to `cybroscgiserver/CHANGELOG.md`.
 
-Afterwards, start the server as described above to make sure it still runs.
+Afterwards, start the server as described above to make sure it still runs
 
 [github]: https://github.com/killer0071234/hassio-cybroscgiserver/issues
 [prs]: https://github.com/killer0071234/hassio-cybroscgiserver/pulls
