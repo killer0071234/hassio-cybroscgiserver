@@ -14,7 +14,7 @@ See ![repository readme][addon-repo-install] on how to install the cybro app in 
 
 **If you have questions or feedback please**
 
-- via Issues and pull requests in the Github repository.
+- via Issues and pull requests in the Github repository
 
 To start and debug the app during development, see the
 [contributing guide](.github/CONTRIBUTING.md#development).
