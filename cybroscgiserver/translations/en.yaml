@@ -2,7 +2,8 @@
 configuration:
   configuration_file:
     name: configuration file
-    description: configuration file to edit settings of scgi server
+    # yamllint disable-line rule:line-length
+    description: config file of older versions of this app, its controllers are imported into the options and the file is renamed to .migrated afterwards
   autodetect_address:
     name: autodetect ip address
     # yamllint disable-line rule:line-length
@@ -14,6 +15,10 @@ configuration:
   verbose_level:
     name: verbose level log output
     description: verbose level of log output
+  controllers:
+    name: manual controllers
+    # yamllint disable-line rule:line-length
+    description: controllers that are not found by autodetect (nad is the serial number of the controller, eg. 1000)
 network:
   4000/tcp: SCGI port (Used for Integrations. eg. ha-hiq)
   8442/udp: Abus push port
