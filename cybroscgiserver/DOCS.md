@@ -58,7 +58,7 @@ Each entry has these fields:
 - `nad` (required): serial number of the controller, e.g. `1000` for controller `c1000`.
 - `ip` (required): IP address of the controller.
 - `port` (optional): UDP port of the controller, by default `8442`.
-- `password` (optional): password of the controller, leave empty if it has none.
+- `password` (optional): numeric password of the controller. Omit this field if the controller has no password.
 
 Example configuration for one controller:
 
@@ -75,6 +75,8 @@ Older versions of this app used a config file (by default
 option is empty and this file is found on start, its controllers are imported into
 the `controllers` option and the file is renamed to `<file>.migrated`. Other settings in that file are
 not used anymore.
+
+**Note**: _This option is deprecated and will be removed in a future release._
 
 ## Troubleshooting
 
