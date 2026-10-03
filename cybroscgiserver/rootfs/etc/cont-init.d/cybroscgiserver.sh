@@ -112,6 +112,11 @@ for section in $($crudini --get /usr/local/bin/scgi_server/config.ini); do
         $crudini --del /usr/local/bin/scgi_server/config.ini "${section}"
     fi
 done
+# each nad can only be configured once, keep the first entry
+for nad in $(jq -r 'group_by(.nad)[] | select(length > 1) | .[0].nad' <<< "${controllers}"); do
+    bashio::log.warning "controller c${nad} is configured more than once, only the first entry is used"
+done
+controllers=$(jq -c 'reduce .[] as $c ([]; if any(.[]; .nad == $c.nad) then . else . + [$c] end)' <<< "${controllers}")
 controller_sections=""
 while read -r controller; do
     nad=$(jq -r '.nad' <<< "${controller}")
