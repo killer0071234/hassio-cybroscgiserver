@@ -2,6 +2,10 @@
 
 # Changelog
 
+## [Unreleased]
+
+- Add a status web page (ingress) that shows the server state, version, the found controllers and their variables @killer0071234
+
 ## [0.3.1] - 2026-10-04
 
 - Add support for manually configured controllers and migrate the old config file into the app options (#30) @killer0071234
