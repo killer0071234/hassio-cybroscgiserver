@@ -2,6 +2,14 @@
 
 # Changelog
 
+## [0.3.1] - 2026-10-04
+
+- Add support for manually configured controllers and migrate the old config file into the app options (#30) @killer0071234
+- Warn about controllers that are configured more than once (#30) @killer0071234
+- Clarify the password description and add a deprecation note to the documentation (#30) @killer0071234
+- Add name and tag templates to the release drafter config (#29) @killer0071234
+- Create the required `log` and `alc` folders in the image, fixing the "Invalid alc filename" error on startup (#31, #32) @killer0071234
+
 ## [0.3.0b0] - 2025-01-06
 
 - Update Cybrotech SCGI Server to v3.2.6 from CybroEdgeToolkit (#19) @killer0071234
