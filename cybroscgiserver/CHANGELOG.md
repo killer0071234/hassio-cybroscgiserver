@@ -2,9 +2,9 @@
 
 # Changelog
 
-## [Unreleased]
+## [0.3.2] - 2026-10-04
 
-- Add a status web page (ingress) that shows the server state, version, the found controllers and their variables @killer0071234
+- Add a status web page (ingress) that shows the server state, version, the found controllers and their variables (#33) @killer0071234
 
 ## [0.3.1] - 2026-10-04
 
