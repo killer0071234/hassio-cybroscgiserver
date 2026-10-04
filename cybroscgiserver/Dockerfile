@@ -34,7 +34,7 @@ RUN \
 COPY rootfs /
 
 # do post modifications
-RUN mkdir /usr/local/bin/scgi_server/log \
+RUN mkdir -p /usr/local/bin/scgi_server/log /usr/local/bin/scgi_server/alc \
     && touch /usr/local/bin/scgi_server/log/scgi.log \
     && ln -sf /dev/stdout /usr/local/bin/scgi_server/log/scgi.log
 
