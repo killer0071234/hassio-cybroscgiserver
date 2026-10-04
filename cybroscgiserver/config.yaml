@@ -32,3 +32,9 @@ map:
   - homeassistant_config:rw
   - addon_config:rw
 host_network: true
+# status web page
+ingress: true
+# 0 assigns a free port, needed because the app uses the host network
+ingress_port: 0
+panel_icon: mdi:lan-connect
+panel_title: CybroScgiServer

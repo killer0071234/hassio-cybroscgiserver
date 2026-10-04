@@ -1,0 +1,19 @@
+#!/command/with-contenv bashio
+# ==============================================================================
+# Home Assistant Community App: CybroScgiServer
+# Runs the status web page (ingress)
+# ==============================================================================
+declare scgi_port
+
+scgi_port=$(crudini --get /usr/local/bin/scgi_server/config.ini SCGI port 2>/dev/null || true)
+[[ "${scgi_port}" =~ ^[0-9]+$ ]] || scgi_port=4000
+
+APP_VERSION=$(bashio::app.version)
+export APP_VERSION
+
+bashio::log.info "Starting status web page..."
+# the app uses the host network, so only listen on the internal hassio network
+exec python3 /usr/local/bin/status_gui/server.py \
+    --bind "$(bashio::app.ip_address)" \
+    --port "$(bashio::app.ingress_port)" \
+    --scgi-port "${scgi_port}"
