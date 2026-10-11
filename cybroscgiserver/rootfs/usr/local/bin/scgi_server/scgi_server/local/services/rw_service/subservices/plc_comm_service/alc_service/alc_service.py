@@ -1,20 +1,34 @@
+import asyncio
+import calendar
 import functools
 import os
 import re
+import tempfile
 from asyncio import AbstractEventLoop
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import AsyncGenerator, Optional, Dict, Tuple
+from typing import Optional, Dict
 
 from lib.general.conditional_logger import ConditionalLogger
-from lib.general.misc import create_task_callback
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
     .alc_service.alc_parser import AlcParser
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
     .alc_service.var_info import VarInfo
 
 
+class AlcError(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class AlcEntry:
+    transfer_date: datetime
+    variables: Dict[str, VarInfo]
+
+
 class AlcService:
-    CRC_FILENAME_REGEX = re.compile("^crc-(\\d+).alc")
+    LEGACY_FILENAME_REGEX = re.compile(r"crc-\d+\.alc")
     ENCODING = "latin-1"
 
     def __init__(self,
@@ -24,103 +38,164 @@ class AlcService:
         self._log: ConditionalLogger = log
         self._loop: AbstractEventLoop = loop
         self._alc_dir: Path = alc_dir
-        self._crc_to_alc: Dict[int, Dict[str, VarInfo]] = {}
+        self._alc_by_nad: Dict[int, AlcEntry] = {}
 
-    async def initialize_with_alc_files(self) -> None:
-        async for crc, alc in self._read_alc_files():
-            self._crc_to_alc[crc] = alc
+    async def initialize(self) -> None:
+        # Tables are loaded on demand, after reading the controller header.
+        await self._loop.run_in_executor(None, self._initialize_blocking)
 
-    async def _read_alc_files(
-        self
-    ) -> AsyncGenerator[Tuple[int, Dict[str, VarInfo]], None]:
-        if not self._alc_dir.exists():
-            os.makedirs(self._alc_dir.resolve(), mode=0o755, exist_ok=False)
-        else:
-            for f in self._alc_dir.iterdir():
-                if not f.is_file():
-                    continue
+    def _initialize_blocking(self) -> None:
+        self._alc_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+        for path in self._alc_dir.iterdir():
+            if (path.is_file() and
+                    self.LEGACY_FILENAME_REGEX.fullmatch(path.name)):
+                try:
+                    path.unlink()
+                    self._log.info(f"Removed legacy alc file \"{path}\"")
+                except OSError as e:
+                    # Legacy files are never used, even if removal fails.
+                    self._log.error(f"Can't remove legacy alc file "
+                                    f"\"{path}\": {e}")
 
-                crc = self._filename_to_crc(f.name)
-                if crc is None:
-                    self._log.error(lambda:
-                                    f"Invalid alc filename \"{f.name}\"")
-                    continue
+    def get(self,
+            nad: int,
+            transfer_date: datetime) -> Optional[Dict[str, VarInfo]]:
+        entry = self._alc_by_nad.get(nad)
+        if entry is not None and entry.transfer_date == transfer_date:
+            return entry.variables
+        return None
 
-                alc = await self._load_alc(f)
-                if alc is None:
-                    continue
+    def invalidate(self,
+                   nad: int,
+                   transfer_date: Optional[datetime] = None) -> None:
+        entry = self._alc_by_nad.get(nad)
+        if entry is not None and entry.transfer_date != transfer_date:
+            del self._alc_by_nad[nad]
 
-                yield crc, alc
+    async def load(self,
+                   nad: int,
+                   transfer_date: datetime) -> Optional[Dict[str, VarInfo]]:
+        """Return a table only if it belongs to this controller and transfer.
 
-    def set_alc_text(self, alc_text: str, crc: int) -> None:
-        self._loop \
-            .create_task(self._save_alc_text(alc_text, crc)) \
-            .add_done_callback(create_task_callback(self._log))
+        Calls for the same controller are serialized by PlcCommService.
+        """
+        alc = self.get(nad, transfer_date)
+        if alc is not None:
+            return alc
 
-        self[crc] = AlcParser.parse(alc_text)
-
-    def __getitem__(self, crc: int) -> Dict[str, VarInfo]:
-        return self._crc_to_alc[crc]
-
-    def __setitem__(self, crc: int, alc: Dict[str, VarInfo]) -> None:
-        self._log.info(f"Add alc with crc={crc}")
-        self._crc_to_alc[crc] = alc
-
-    async def _load_alc(self, path: Path) -> Optional[Dict[str, VarInfo]]:
-        alc_text = await self._load_alc_text(path)
-        if alc_text is None:
+        self.invalidate(nad, transfer_date)
+        data = await self._load_alc_bytes(nad, transfer_date)
+        if data is None:
             return None
-        return AlcParser.parse(alc_text)
-
-    async def _save_alc_text(self, alc_text: str, crc: int) -> None:
-        blocking_task = functools.partial(self._save_alc_text_blocking,
-                                          alc_text,
-                                          crc)
-        return await self._loop.run_in_executor(None, blocking_task)
-
-    async def load_alc_text_for_crc(self, crc: int) -> str:
-        path = self._alc_dir.joinpath(self._crc_to_filename(crc))
-        return await self._load_alc_text(path)
-
-    async def _load_alc_text(self, path: Path) -> str:
-        blocking_task = functools.partial(self._load_alc_text_blocking,
-                                          path)
-        return await self._loop.run_in_executor(None, blocking_task)
-
-    def _save_alc_text_blocking(self, alc_text: str, crc: int) -> None:
-        path = self._alc_dir.joinpath(self._crc_to_filename(crc))
 
         try:
-            with path.open("w", encoding=self.ENCODING) as f:
-                f.write(alc_text)
-                f.flush()
-        except OSError as e:
-            self._log.debug(lambda: f"Can't save alc file \"{path}\"",
-                            exc_info=e)
-            self._log.debug(lambda: f"Can't save alc file \"{path}\": {e}")
+            alc = self._parse(data)
+        except AlcError as e:
+            self._log.error(f"Can't parse cached alc for c{nad}: {e}")
+            return None
 
-    def _load_alc_text_blocking(self, alc_path: Path) -> str:
+        self._alc_by_nad[nad] = AlcEntry(transfer_date, alc)
+        return alc
+
+    async def set_alc_bytes(self,
+                            nad: int,
+                            transfer_date: datetime,
+                            data: bytes) -> Dict[str, VarInfo]:
+        alc = self._parse(data)
+        await self._save_alc_bytes(nad, transfer_date, data)
+        self._alc_by_nad[nad] = AlcEntry(transfer_date, alc)
+        self._log.info(f"Added alc for c{nad}, transfer_date={transfer_date}")
+        return alc
+
+    async def load_alc_text(self,
+                            nad: int,
+                            transfer_date: datetime) -> Optional[str]:
+        data = await self._load_alc_bytes(nad, transfer_date)
+        return None if data is None else data.decode(self.ENCODING)
+
+    @classmethod
+    def _parse(cls, data: bytes) -> Dict[str, VarInfo]:
         try:
-            with alc_path.open("r", encoding=self.ENCODING) as f:
+            return AlcParser.parse(data.decode(cls.ENCODING))
+        except (ValueError, AttributeError, TypeError) as e:
+            raise AlcError("Invalid allocation table") from e
+
+    async def _load_alc_bytes(self,
+                              nad: int,
+                              transfer_date: datetime) -> Optional[bytes]:
+        blocking_task = functools.partial(self._load_alc_bytes_blocking,
+                                          nad, transfer_date)
+        return await self._loop.run_in_executor(None, blocking_task)
+
+    def _load_alc_bytes_blocking(self,
+                                 nad: int,
+                                 transfer_date: datetime) -> Optional[bytes]:
+        path = self._alc_dir.joinpath(f"c{nad}.alc")
+        try:
+            with path.open("rb") as f:
+                # Read the timestamp and content from the same open file.
+                if os.fstat(f.fileno()).st_mtime != self._to_mtime(transfer_date):
+                    return None
                 return f.read()
+        except FileNotFoundError:
+            return None
         except OSError as e:
-            self._log.debug(lambda: f"Can't load alc file \"{alc_path}\"",
-                            exc_info=e)
-            self._log.error(lambda: f"Can't load alc file \"{alc_path}\": {e}")
-
-    @classmethod
-    def _crc_to_filename(cls, crc: int) -> str:
-        return f"crc-{crc}.alc"
-
-    @classmethod
-    def _filename_to_crc(cls, filename: str) -> Optional[int]:
-        match = cls.CRC_FILENAME_REGEX.match(filename)
-        if match is None:
+            self._log.error(f"Can't load alc file \"{path}\": {e}")
             return None
 
-        crc_str = match.group(1)
-
+    async def _save_alc_bytes(self,
+                              nad: int,
+                              transfer_date: datetime,
+                              data: bytes) -> None:
+        blocking_task = functools.partial(self._save_alc_bytes_blocking,
+                                          nad, transfer_date, data)
+        future = self._loop.run_in_executor(None, blocking_task)
+        cancelled = False
         try:
-            return int(crc_str)
-        except ValueError:
-            return None
+            while True:
+                try:
+                    await asyncio.shield(future)
+                    break
+                except asyncio.CancelledError:
+                    if future.cancelled():
+                        raise
+                    # Keep the controller lock until writing has finished,
+                    # even if cancellation is requested more than once.
+                    cancelled = True
+        except OSError as e:
+            if cancelled:
+                raise asyncio.CancelledError() from e
+            raise AlcError(f"Can't save alc for c{nad}: {e}") from e
+        if cancelled:
+            raise asyncio.CancelledError()
+
+    def _save_alc_bytes_blocking(self,
+                                 nad: int,
+                                 transfer_date: datetime,
+                                 data: bytes) -> None:
+        path = self._alc_dir.joinpath(f"c{nad}.alc")
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=self._alc_dir, prefix=f".c{nad}-",
+                suffix=".tmp", delete=False
+            ) as f:
+                temporary_path = Path(f.name)
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+
+            timestamp = self._to_mtime(transfer_date)
+            os.utime(temporary_path, (timestamp, timestamp))
+            if temporary_path.stat().st_mtime != timestamp:
+                raise OSError("Filesystem cannot preserve transfer_date")
+            os.replace(temporary_path, path)
+        finally:
+            if temporary_path is not None and temporary_path.exists():
+                temporary_path.unlink()
+
+    @staticmethod
+    def _to_mtime(transfer_date: datetime) -> int:
+        # The PLC date has no timezone. Encode its fields as UTC so that
+        # server timezone and daylight-saving changes cannot affect the key.
+        return calendar.timegm(transfer_date.timetuple())

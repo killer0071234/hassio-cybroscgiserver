@@ -34,6 +34,17 @@ class SinglePlcCache:
 
         self._name_to_item_dict: Dict[str, 'Item'] = {}
         self._name_to_future_item_dict: Dict[str, Future] = {}
+        self._revision: int = 0
+
+    @property
+    def revision(self) -> int:
+        return self._revision
+
+    def clear(self) -> None:
+        self._revision += 1
+        self._name_to_item_dict.clear()
+        for name in list(self._name_to_future_item_dict):
+            self.cancel_future(name)
 
     def get_value(self, name: str) -> CacheValue:
         item = self._name_to_item_dict[name]

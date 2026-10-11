@@ -29,9 +29,17 @@ class PlcCacheFacade:
         self._log: ConditionalLogger = log
         self._cache: SinglePlcCache = cache
 
+    @property
+    def revision(self) -> int:
+        return self._cache.revision
+
     def start_futures(self, requests: List[RWRequest]) -> None:
         for request in requests:
             self._cache.start_future(request.tag_name)
+
+    def cancel_futures(self, requests: List[RWRequest]) -> None:
+        for request in requests:
+            self._cache.cancel_future(request.tag_name)
 
     def write(self, responses: List[RResponse]) -> None:
         for response in responses:
