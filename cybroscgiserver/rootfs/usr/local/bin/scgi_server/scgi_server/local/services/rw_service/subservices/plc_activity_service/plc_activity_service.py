@@ -38,8 +38,10 @@ class PlcActivityService:
         activity.failed_exchanges_count += 1
         activity.last_exchange_duration = None
 
-    def report_alc_crc_used(self, nad: int, alc_crc: Optional[int]):
-        self[nad].last_used_alc_crc = alc_crc
+    def report_alc_transfer_date_used(self,
+                                      nad: int,
+                                      transfer_date: Optional[datetime]):
+        self[nad].last_used_alc_transfer_date = transfer_date
 
     def report_plc_head_used(self, nad: int, plc_head):
         self[nad].last_plc_head = plc_head

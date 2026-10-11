@@ -428,7 +428,6 @@ class Container:
             self._socket_service = SocketService(
                 get_logger(LoggerNames.SOCKET.name),
                 self.main_loop,
-                self.alc_service,
                 self.plc_communication_service,
                 self.alias_service,
                 self.tcp_server.send_to_clients,

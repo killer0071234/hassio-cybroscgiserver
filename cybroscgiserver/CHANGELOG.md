@@ -2,6 +2,13 @@
 
 # Changelog
 
+## [0.4.0] - 2026-10-11
+
+- Update Cybrotech SCGI Server to v3.4.0 and web_scada to v1.2.7 from CybroEdgeToolkit (2026-10-09) @killer0071234
+  - Remove the limit on the number of controllers caused by the 16-bit alc CRC; the alc transfer date is used instead
+  - Each controller now has its own alc (about 100 kB more RAM per controller); old `crc-*.alc` files are removed on start
+- Update the version in the readme files and the release badge @killer0071234
+
 ## [0.3.2] - 2026-10-04
 
 - Add a status web page (ingress) that shows the server state, version, the found controllers and their variables (#33) @killer0071234

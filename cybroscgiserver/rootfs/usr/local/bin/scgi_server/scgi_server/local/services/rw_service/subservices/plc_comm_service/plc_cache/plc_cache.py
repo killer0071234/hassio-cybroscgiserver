@@ -39,6 +39,11 @@ class PlcCache:
             self._plc_caches[nad] = result
             return result
 
+    def clear_plc(self, nad: int) -> None:
+        cache = self._plc_caches.get(nad)
+        if cache is not None:
+            cache.clear()
+
     async def _cleanup_task(self, cleanup_period: float) -> None:
         while True:
             await asyncio.sleep(cleanup_period)

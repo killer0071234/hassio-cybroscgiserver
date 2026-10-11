@@ -52,7 +52,9 @@ class SinglePlcStatusService:
 
     @property
     def has_alc(self) -> bool:
-        return self.plc_activity.last_used_alc_crc is not None
+        transfer_date = self.plc_activity.last_used_alc_transfer_date
+        return (transfer_date is not None and
+                self._alc_service.get(self._nad, transfer_date) is not None)
 
     @property
     def device_status(self) -> PlcActivity.DeviceStatus:
@@ -67,18 +69,21 @@ class SinglePlcStatusService:
         return self.plc_activity.bytes_transferred
 
     async def get_alc_text(self) -> Optional[str]:
-        crc = self.plc_activity.last_used_alc_crc
-        if crc is not None:
-            return await self._alc_service.load_alc_text_for_crc(crc)
-        else:
+        transfer_date = self.plc_activity.last_used_alc_transfer_date
+        if transfer_date is None:
             return None
+        text = await self._alc_service.load_alc_text(self._nad, transfer_date)
+        # Another request may have invalidated this table during the disk read.
+        if (self.plc_activity.last_used_alc_transfer_date != transfer_date or
+                self._alc_service.get(self._nad, transfer_date) is None):
+            return None
+        return text
 
     async def get_alc_data(self) -> Optional[Dict[str, VarInfo]]:
-        crc = self.plc_activity.last_used_alc_crc
-        if crc is not None:
-            return self._alc_service[crc]
-        else:
-            return None
+        transfer_date = self.plc_activity.last_used_alc_transfer_date
+        if transfer_date is not None:
+            return self._alc_service.get(self._nad, transfer_date)
+        return None
 
     @property
     def communication_error_count(self) -> int:

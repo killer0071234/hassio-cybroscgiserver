@@ -41,5 +41,5 @@ class AsyncCache:
         del self._futures[key]
 
     def clear(self) -> None:
-        for key in self._futures:
+        for key in list(self._futures):
             self.cancel(key)
