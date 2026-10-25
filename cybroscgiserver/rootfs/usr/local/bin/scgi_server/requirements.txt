@@ -7,7 +7,7 @@ psutil==5.9.8
 paho-mqtt==2.0.0
 
 # data logger
-aiomysql==0.2.0
+aiomysql==0.3.2
 
 # web scada
 Django==5.2.17
