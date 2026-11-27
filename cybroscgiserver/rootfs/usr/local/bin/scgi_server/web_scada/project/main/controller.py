@@ -38,7 +38,8 @@ def edit(request: WSGIRequest, id: Union[str, int] = 0):
             item = Controller()
             item.created = request.user
     else:
-        item = None
+        item = Controller()
+        item.created = request.user
 
     if request.method == "POST":
         def get_value(key):

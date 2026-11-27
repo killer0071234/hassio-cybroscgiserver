@@ -41,8 +41,8 @@ class Bootstrap:
         self._plc_info_service.set_plc_client_manager(self._plc_client_manager)
         self._plc_info_service.load_static_plc_infos()
 
-        self._log.info('Initializing alc service with alc files')
-        await self._alc_service.initialize_with_alc_files()
+        self._log.info('Initializing alc service')
+        await self._alc_service.initialize()
 
         self._log.info('Initializing UDP communication')
         await self._udp_transceiver.start()

@@ -1,1 +1,1 @@
-WebSoftwareVersion = "1.2.6"
+WebSoftwareVersion = "1.2.7"

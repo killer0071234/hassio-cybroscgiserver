@@ -1,0 +1,6 @@
+#!/command/with-contenv bashio
+# ==============================================================================
+# Home Assistant Community App: CybroScgiServer
+# The status web page is not critical, s6 restarts it when it stops
+# ==============================================================================
+bashio::log.info "Status web page stopped"

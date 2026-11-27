@@ -100,10 +100,10 @@ class CustomUser(User):
             return False
 
     def delete(self, using=None, keep_parents=False):
-        # break relations
-        self.permissions.delete()
+        permissions = self.permissions
         Relay.objects.filter(user=self).delete()
         super().delete(using, keep_parents)
+        permissions.delete()
 
     def is_any_plant_admin(self) -> bool:
         return Plant.objects.filter(admins__in=[self]).count() != 0

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Coroutine, Callable, Optional, Dict, List
+from datetime import datetime
+from typing import Coroutine, Callable, Optional, Dict, List, Tuple
 
 from lib.general.conditional_logger import ConditionalLogger
 from lib.input_output.scgi.r_response import RResponse
@@ -12,6 +13,8 @@ from scgi_server.local.services.rw_service.scgi_communication.rw_request \
     import RWRequest
 from scgi_server.local.services.rw_service.subservices.plc_activity_service \
     .plc_activity_service import PlcActivityService
+from scgi_server.local.services.rw_service.subservices.plc_comm_service \
+    .alc_service.alc_service import AlcError
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
     .alc_service.var_info import VarInfo
 from scgi_server.local.services.rw_service.subservices.plc_comm_service \
@@ -44,8 +47,8 @@ class PlcCommunicator:
         cache: Optional[PlcCacheFacade],
         plc_activity_service: PlcActivityService,
         handle_alc_request: Callable[
-            [PlcClient, int],
-            Coroutine[None, None, Optional[Dict[str, VarInfo]]]
+            [PlcClient, datetime],
+            Coroutine[None, None, Dict[str, VarInfo]]
         ],
         handle_plc_program_datetime_update,
         handle_plc_ip_update,
@@ -76,12 +79,14 @@ class PlcCommunicator:
         if self._cache is not None:
             self._cache.start_futures(r_requests)
 
-        responses = await self._process_rw_requests(r_requests, w_requests)
-
-        if self._cache is not None:
-            self._cache.write(responses)
-
-        return responses
+        try:
+            responses = await self._process_rw_requests(r_requests, w_requests)
+            if self._cache is not None:
+                self._cache.write(responses)
+            return responses
+        finally:
+            if self._cache is not None:
+                self._cache.cancel_futures(r_requests)
 
     async def _process_rw_requests(self,
                                    r_requests: List[RWRequest],
@@ -134,52 +139,51 @@ class PlcCommunicator:
         return self._create_r_responses_with_code(r_requests,
                                                   RResponse.Code.TIMEOUT)
 
+    async def load_alc(self) -> Tuple[datetime, Dict[str, VarInfo]]:
+        """Check the program and obtain the table for this exact transfer."""
+        nad = self._plc_client.plc_info.nad
+        try:
+            transfer_date = await self.plc_head_check()
+            alc = await self._get_alc(self._plc_client, transfer_date)
+        except (self.PlcHeadError, AlcError, ExchangerTimeoutError):
+            self._plc_activity_service.report_alc_transfer_date_used(nad, None)
+            raise
+
+        self._plc_activity_service.report_alc_transfer_date_used(
+            nad, transfer_date
+        )
+        return transfer_date, alc
+
     async def _read_for_data_logger(self,
                                     r_requests: List[RWRequest],
                                     task_id: int) -> List[RResponse]:
         try:
-            crc = await self.plc_head_check()
+            transfer_date, alc = await self.load_alc()
         except self.PlcHeadError:
             return self._create_r_responses_with_code(
-                r_requests,
-                RResponse.Code.PLC_HEAD_ERROR
+                r_requests, RResponse.Code.PLC_HEAD_ERROR
+            )
+        except AlcError as e:
+            self._log.error(f"Can't load alc: {e}")
+            return self._create_r_responses_with_code(
+                r_requests, RResponse.Code.NO_ALC_ERROR
             )
 
-        cached_item = await self._data_logger_cache.get(task_id, crc)
-
+        nad = self._plc_client.plc_info.nad
+        cached_item = await self._data_logger_cache.get(
+            task_id, nad, transfer_date
+        )
+        processor = PlcCommServiceReadProcessor(
+            self._log,
+            self._plc_client,
+            self._cpu_intensive_task_runner,
+            self._only_user_variables
+        )
         if cached_item is not None:
-            self._log.debug(f"cache found for (task: {task_id} crc: {crc})")
+            return await processor.process_cache_item(cached_item)
 
-            self._plc_activity_service.report_alc_crc_used(
-                self._plc_client.plc_info.nad,
-                crc
-            )
-
-            return await PlcCommServiceReadProcessor(
-                self._log,
-                self._plc_client,
-                self._cpu_intensive_task_runner,
-                self._only_user_variables
-            ).process_cache_item(cached_item)
-
-        self._log.debug(f"cache not found for (task: {task_id} crc: {crc})")
-        self._data_logger_cache.set_future(task_id, crc)
-
+        self._data_logger_cache.set_future(task_id, nad, transfer_date)
         try:
-            alc = await self._get_alc(self._plc_client, crc)
-            self._plc_activity_service.report_alc_crc_used(
-                self._plc_client.plc_info.nad,
-                None if alc is None else crc
-            )
-
-            if alc is None:
-                self._data_logger_cache.cancel(task_id, crc)
-
-                return self._create_r_responses_with_code(
-                    r_requests,
-                    RResponse.Code.DEVICE_NOT_FOUND
-                )
-
             cache_item = None
 
             def on_cache_item_created(new_cache_item):
@@ -194,53 +198,33 @@ class PlcCommunicator:
                 on_cache_item_created=on_cache_item_created
             ).process(r_requests, alc)
 
-            if cache_item is not None:
-                self._log.debug(
-                    f"cache created for (task: {task_id} crc: {crc})"
+            # A prepared request contains only the valid variables. Keep the
+            # normal path for errors so subsequent replies do not omit them.
+            if (cache_item is not None and
+                    all(response.valid for response in result)):
+                self._data_logger_cache.set_future_result(
+                    task_id, nad, transfer_date, cache_item
                 )
-                self._data_logger_cache.set_future_result(task_id,
-                                                          crc,
-                                                          cache_item)
             else:
-                self._data_logger_cache.cancel(task_id, crc)
-
+                self._data_logger_cache.cancel(task_id, nad, transfer_date)
             return result
-        except BaseException as e:
-            self._data_logger_cache.cancel(task_id, crc)
-            raise e
+        except BaseException:
+            self._data_logger_cache.cancel(task_id, nad, transfer_date)
+            raise
 
     async def _read_write(self,
                           r_requests: List[RWRequest],
                           w_requests: List[RWRequest]) -> List[RResponse]:
         try:
-            crc = await self.plc_head_check()
+            _, alc = await self.load_alc()
         except self.PlcHeadError:
             return self._create_r_responses_with_code(
-                r_requests,
-                RResponse.Code.PLC_HEAD_ERROR
+                r_requests, RResponse.Code.PLC_HEAD_ERROR
             )
-
-        try:
-            alc = await self._get_alc(self._plc_client, crc)
-        except RuntimeError:
-            self._plc_activity_service.report_alc_crc_used(
-                self._plc_client.plc_info.nad,
-                None
-            )
+        except AlcError as e:
+            self._log.error(f"Can't load alc: {e}")
             return self._create_r_responses_with_code(
-                r_requests,
-                RResponse.Code.NO_ALC_ERROR
-            )
-
-        self._plc_activity_service.report_alc_crc_used(
-            self._plc_client.plc_info.nad,
-            None if alc is None else crc
-        )
-
-        if alc is None:
-            return self._create_r_responses_with_code(
-                r_requests,
-                RResponse.Code.DEVICE_NOT_FOUND
+                r_requests, RResponse.Code.NO_ALC_ERROR
             )
 
         if len(w_requests) > 0:
@@ -258,35 +242,36 @@ class PlcCommunicator:
             self._only_user_variables
         ).process(r_requests, alc)
 
-    async def plc_head_check(self) -> int:
+    async def plc_head_check(self) -> datetime:
         plc_head = await self._plc_client.read_plc_head()
-
-        if not self._is_plc_head_ok(plc_head):
-            raise self.PlcHeadError()
-
-        last_program_datetime = self._plc_client.plc_info.program_datetime
-        new_program_datetime = plc_head.program_timestamp
-
-        if last_program_datetime is None:
-            self._plc_client = await self._update_plc_client_program_datetime(
-                self._plc_client,
-                new_program_datetime
-            )
-        elif last_program_datetime != new_program_datetime:
-            self._plc_client = await self._update_plc_client_program_datetime(
-                self._plc_client,
-                new_program_datetime
-            )
+        await self._accept_plc_head(plc_head)
+        transfer_date = plc_head.program_timestamp
 
         plc_head = await self._plc_client.read_plc_head()
-        if not self._is_plc_head_ok(plc_head):
+        await self._accept_plc_head(plc_head)
+        if plc_head.program_timestamp != transfer_date:
+            # The next request will use the new transfer. Never mix headers.
             raise self.PlcHeadError()
 
         status = await self._plc_client.read_status()
         if not self._is_status_ok(status):
+            self._plc_client = await self._update_plc_client_program_datetime(
+                self._plc_client, None
+            )
             raise self.PlcHeadError()
 
-        return plc_head.code_crc
+        return transfer_date
+
+    async def _accept_plc_head(self, plc_head: PlcHead) -> None:
+        if not self._is_plc_head_ok(plc_head):
+            self._plc_client = await self._update_plc_client_program_datetime(
+                self._plc_client, None
+            )
+            raise self.PlcHeadError()
+
+        self._plc_client = await self._update_plc_client_program_datetime(
+            self._plc_client, plc_head.program_timestamp
+        )
 
     @classmethod
     def _is_status_ok(cls, status):
