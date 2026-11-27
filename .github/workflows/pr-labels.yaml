@@ -10,8 +10,42 @@ on:
       - unlabeled
       - synchronize
 
+# Labels are often added right after a PR is opened (e.g. by Dependabot).
+# Only the newest run per PR matters.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:
-  workflows:
-    uses: hassio-addons/workflows/.github/workflows/pr-labels.yaml@adec4b96071354cc44924a6ef9975ff60cf9ddd9 # v5.0.0
+  # Same check as hassio-addons/workflows pr-labels.yaml, but it reads the
+  # current labels from the API instead of the event payload, so a run for
+  # "opened" doesn't fail when the labels are added a moment later.
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: 🏷 Verify PR has a valid label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          VALID_LABELS: >-
+            breaking-change bugfix documentation enhancement refactor
+            performance new-feature maintenance ci dependencies translations
+        run: |
+          # Give bots a moment to add their labels after opening the PR.
+          sleep 10
+          labels=$(gh pr view "${PR_URL}" --json labels --jq '.labels[].name')
+          for label in ${labels}; do
+            for valid in ${VALID_LABELS}; do
+              if [[ "${label}" == "${valid}" ]]; then
+                echo "Found valid label: ${label}"
+                exit 0
+              fi
+            done
+          done
+          echo "::error::The PR needs one of these labels: ${VALID_LABELS}"
+          exit 1
