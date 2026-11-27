@@ -1,0 +1,83 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}{{ page.format_name }}{% endblock %}
+{% block page_description %}{{ page.description }}{% endblock %}
+
+{% block extra_head %}
+<link href="{% static 'inc/objects.css' %}" rel="stylesheet" type="text/css" />
+<link href="{% static 'inc/page.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block page_content %}
+<div id="page_content">
+    <div id="breadcrumbs">
+        <div id="breadcrumbs_container">
+            <a href="#" id="print_page">
+            <img src="{% static 'img/ico_printer.png' %}" alt="Print this page" title="Print this page" style="margin-right: 10px;" />
+            </a>
+
+            {% if page.plant %}
+            <a href="/">Home</a> &raquo;
+            {% endif %}
+
+            {% for p in page.traverse_to_root %}
+                {% if not forloop.last %}
+            <a href="{{ p.get_link }}">{{ p.format_name }}</a>{% if not forloop.last %} &raquo; {% endif %}
+                {% else %}
+            {{ p.format_name }}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div id="heartbeat_container">
+            <img src="{% static 'img/ico_heart.gif' %}" id="heartbeat" alt="" style="display: none;" />
+        </div>
+        <div class="cleaner">&nbsp;</div>
+    </div>
+
+    {% if page.id != 1 %}
+    <h1>{{ page.format_name }}</h1>
+    {% endif %}
+
+    {% if page_content %}
+    {{ page_content|safe }}
+    {% else %}
+        {% if children %}
+    <div class="child_list">
+            {% for p in children %}
+        <div class="item">
+            <h2><a href="{{ p.get_link }}">{{ p.format_name }}</a></h2>
+                    {% if p.description %}
+            <p>{{ p.description }}</p>
+                    {% endif %}
+        </div>
+            {% endfor %}
+    </div>
+        {% endif %}
+
+        {% if page.id == 1 and plants %}
+    <br/>
+    <div class="child_list">
+                {% for p in plants %}
+        <div class="item">
+                <h2><a href="{{ p.homepage.get_link }}">{{ p.format_name }}</a></h2>
+                        {% if p.description %}
+                <p>{{ p.description }}</p>
+                        {% endif %}
+        </div>
+                {% endfor %}
+    </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+
+<script type="text/javascript">
+$(function() {
+    $("#print_page").click(function() {
+        window.print();
+        return false;
+    });
+});
+</script>
+
+{% endblock %}

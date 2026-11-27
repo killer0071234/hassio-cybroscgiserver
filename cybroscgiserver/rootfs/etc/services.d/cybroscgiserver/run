@@ -1,6 +1,6 @@
 #!/command/with-contenv bashio
 # ==============================================================================
-# Home Assistant Community Add-on: CybroScgiServer
+# Home Assistant Community App: CybroScgiServer
 # Runs CybroScgiServer
 # ==============================================================================
 version=$(sed -n 's/^APP_VERSION = //p' /usr/local/bin/scgi_server/scgi_server/constants.py)

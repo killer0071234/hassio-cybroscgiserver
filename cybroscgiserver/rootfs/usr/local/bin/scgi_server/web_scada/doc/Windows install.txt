@@ -1,0 +1,150 @@
+================================================================================
+                    CybroWebScada (c) 2010-2024 Cybrotech Ltd
+================================================================================
+
+This document describes how to install web scada on Windows PC.
+
+Installation
+--------------------------------------------------------------------------------
+- Cybro Edge Toolkit
+    Destination directory: c:\Program Files (x86)\Cybrotech\
+
+- WAMP server
+    URL: https://sourceforge.net/projects/wampserver/
+    Install directory: c:\Program Files\wamp\
+    Note:
+        Start server. Browse to http://localhost/ to check if installation is correct.
+
+- Python
+    Version: 3.12
+    URL: http://www.python.org/getit/
+    Install directory: c:\Program Files\Python312\ (depends on version)
+    Note:
+        Check option "Install for all users". Otherwise, mod_wsgi may fail to start.
+        Put Python install directory to the path environment variable (for example: c:\Program Files\Python312\).
+        Don't forget to log off/log on after setting environment variable.
+
+- Python virtual environment
+    python -m ensurepip --upgrade
+    pip install virtualenv
+    cd c:\Program Files (x86)\Cybrotech\app
+    python -m venv venv
+    .\venv\Scripts\activate
+    pip install -U -r requirements.txt
+
+- mod_wsgi
+    URL: http://code.google.com/p/modwsgi/wiki/DownloadTheSoftware?tm=2
+    Note:
+        mod_wsgi version must match installed Python version. When file is downloaded,
+        rename it to mod_wsgi.so and copy it to Apache modules directory (for example
+        c:\Program Files\wamp\bin\apache\Apache2.2.17\modules).
+
+
+Configuration
+--------------------------------------------------------------------------------
+- scgi_server application
+
+    Edit c:\Program Files (x86)\Cybrotech\app\config.ini, important settings are:
+
+      InterfaceBindAddress, LocalAccess, BroadcastAddress, ScgiServerURL, ScgiServerPort,
+      DatabaseHost, DatabaseName, DatabaseUser, DatabasePassword.
+
+    Edit c:\Program Files (x86)\Cybrotech\app\web_scada\settings\settings_local.py, important settings are:
+
+      DATABASE_NAME, DATABASE_USER, DATABASE_PASSWORD, TIME_ZONE, directories
+
+- Apache server
+
+    Open Apache config file (c:\Program Files\wamp\bin\apache\Apache2.2.17\conf\httpd.conf) and
+    add the following line to the end of the file:
+
+        Include conf/solar.conf
+
+    Create a new file c:\Program Files\wamp\bin\apache\Apache2.2.17\conf\solar.conf and paste
+    following configuration:
+
+        LoadModule dir_module    modules/mod_dir.so
+        LoadModule wsgi_module   modules/mod_wsgi.so
+        LoadModule alias_module  modules/mod_alias.so
+
+        # solar cybro web application static files directory
+        Alias /static/ "c:/Program Files (x86)/Cybrotech/app/web_scada/static/"
+        <directory "c:/Program Files (x86)/Cybrotech/app/web_scada/static/">
+            Order deny,allow
+            Allow from all
+        </directory>
+
+        # solar cybro web application data directory
+        Alias /data/ "c:/Program Files (x86)/Cybrotech/app/web_scada/data/"
+        <directory "c:/Program Files (x86)/Cybrotech/app/web_scada/data/">
+            Order deny,allow
+            Allow from all
+        </directory>
+
+        WSGIDaemonProcess solar python-home=c:/Program Files (x86)/Cybrotech/app/venv python-path=c:/Program Files (x86)/Cybrotech/app/web_scada
+        WSGIProcessGroup solar
+
+        # location of web scada startup file
+        WSGIScriptAlias / "c:/Program Files (x86)/Cybrotech/app/web_scada/wsgi.py"
+        <directory "c:/Program Files (x86)/Cybrotech/app/web_scada/">
+            Order deny,allow
+            Allow from all
+        </directory>
+
+- MySQL dBase
+
+    Edit MySQL config file (c:\Program Files\wamp\bin\mysql\mysql5.5.8\my.ini) and change
+    data directory if needed - parameter datadir.
+
+- phpMyAdmin
+
+    Edit phpMyAdmin config file c:\Program Files\wamp\apps\phpmyadmin3.3.9\config.inc.php and set
+    following options:
+
+        $cfg['Servers'][$i]['auth_type'] = 'cookie';
+        $cfg['Servers'][$i]['user'] = '';
+        $cfg['Servers'][$i]['password'] = '';
+        $cfg['Servers'][$i]['AllowNoPassword'] = false;
+
+
+dBase installation
+--------------------------------------------------------------------------------
+Browse to http://localhost/phpmyadmin/ to start phpMyAdmin. Create database by running the following SQL command:
+
+    CREATE DATABASE `solar` DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+
+Change default root passwords (replace <password> with your password):
+
+    SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('<password>');
+    SET PASSWORD FOR 'root'@'::1' = PASSWORD('<password>');
+    SET PASSWORD FOR 'root'@'localhost' = PASSWORD('<password>')
+
+Create default database user (replace <password> with your password):
+
+    CREATE USER 'solar'@'localhost' IDENTIFIED BY  '<password>';
+    GRANT ALL PRIVILEGES ON * . * TO 'solar'@'localhost' IDENTIFIED BY '<password>' WITH GRANT OPTION MAX_QUERIES_PER_HOUR 0 MAX_CONNECTIONS_PER_HOUR 0 MAX_UPDATES_PER_HOUR 0 MAX_USER_CONNECTIONS 0;
+    GRANT ALL PRIVILEGES ON `solar` . * TO 'solar'@'localhost';
+
+Import attached SQL file db_create.sql.
+
+
+Start up
+--------------------------------------------------------------------------------
+- Create desktop shortcut to scgi_server:
+
+    c:\Program Files (x86)\Cybrotech\app\scgi_server\start.py
+
+- Copy shortcut to windows start-up directory
+
+
+Frequently asked questions
+--------------------------------------------------------------------------------
+- Apache service can be managed by clicking wamp icon in system tray and selecting Apache/Service.
+
+- MySQL service can be managed by clicking wamp icon in system tray and selecting MySQL/Service.
+
+- After changing Apache config files or Solar Cybro python files, restart Apache for changes to take effect.
+
+- If Skype is running, it's possible that is using TCP port 80, preventing Apache service to start.
+
+- Keep in mind that firewall may block Apache or any other communication service.

@@ -2,9 +2,7 @@ import struct
 from datetime import timedelta
 from functools import reduce
 from timeit import default_timer
-from typing import Callable, Generator, Tuple, Optional, List
-
-from typing_extensions import Union
+from typing import Callable, Generator, Tuple, Optional, List, Union
 
 from lib.general.conditional_logger import ConditionalLogger
 from lib.services.cpu_intensive_task_runner import \

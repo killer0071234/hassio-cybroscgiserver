@@ -1,0 +1,19 @@
+{% if items.count %}
+<table class="content_items">
+    <tr>
+        <th style="width: 20px;">&nbsp;</th>
+        <th style="width: 50px; text-align: center;">NAD</th>
+        <th>Location</th>
+    </tr>
+
+    {% for item in items %}
+    <tr class="hover_row">
+        <td><input type="checkbox" class="controller_chx" id="controller_chx_{{ item.id }}" rel="{{ item.id }}" name="{{ item.location }}" /></td>
+        <td style="text-align: center;"><label for="controller_chx_{{ item.id }}">{{ item.nad }}</label></td>
+        <td><label for="controller_chx_{{ item.id }}">{{ item.location }}</label></td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No available controllers.</p>
+{% endif %}

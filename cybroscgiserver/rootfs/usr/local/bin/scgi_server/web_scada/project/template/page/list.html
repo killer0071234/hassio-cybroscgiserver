@@ -1,0 +1,81 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}Manage content{% endblock %}
+
+{% block main_content %}
+
+{% if plant %}
+    <h1>Manage content - {{ plant.format_name }}</h1>
+{% else %}
+    <h1>Manage content</h1>
+{% endif %}
+
+<div class="toolbar">
+    {% if plant %}
+    <a href="/plant/list/"><img src="{% static 'img/ico_signout.png' %}" class="ico" alt=""/>Back</a>
+    <a href="/plant/edit/{{ plant.id }}/"><img src="{% static 'img/ico_document_pencil.png' %}" class="ico" alt=""/>Edit properties</a>
+    {% endif %}
+    <a href="/page/edit/{{ plant_id }}/"><img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Create new page</a>
+</div>
+
+<table class="content_items">
+    <tr>
+        <th class="col1">Page name</th>
+        <th style="width: 40px; text-align: center;">View</th>
+        <th class="col2" style="width: 130px;">Author</th>
+        {% if not editing_site_content %}
+        <th style="width: 50px; text-align: center;">Public</th>
+        {% endif %}
+        <th style="width: 80px; text-align: center;">Published</th>
+        <th style="width: 50px; text-align: center;">Delete</th>
+    </tr>
+
+    {% for item in items %}
+    <tr class="hover_row">
+        <td class="col1">
+            <a href="/page/edit/{{ plant_id }}/{{ item.id }}/" style="padding-left: {{ item.get_list_indent_px }}px; display: block;" title="Edit page">{{ item.format_name }}</a>
+        </td>
+
+        <td style="text-align: center;"><a href="{{ item.get_link }}" title="View page"><img src="{% static 'img/ico_magnifier.png' %}" alt=""/></a></td>
+        <td class="col2">{{ item.author.format_name }}</td>
+
+        {% if not editing_site_content %}
+            <td style="text-align: center;">
+                {% if item.parent %}
+                    <a href="/page/toggle_public/{{ plant_id }}/{{ item.id }}/" title="Make {% if item.public %}private{% else %}public{% endif %}">
+                        <img src="{% if item.public %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+                    </a>
+                {% endif %}
+            </td>
+        {% endif %}
+
+        <td class="col3">
+            {% if item.parent %}
+                <a href="/page/toggle_published/{{ plant_id }}/{{ item.id }}/" title="{% if item.published %}Unpublish{% else %}Publish{% endif %}">
+                    <img src="{% if item.published %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+                </a>
+            {% endif %}
+        </td>
+
+        <td class="col4">
+            {% if item.parent %}
+                <a href="/page/delete/{{ plant_id }}/{{ item.id }}/" class="delete_item" rel="{{ item.name }}">
+                    <img src="{% static 'img/ico_minus.png' %}" alt="" title="Delete" />
+                </a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+<script type="text/javascript">
+$(function() {
+    $(".delete_item").click(function() {
+        const name = $(this).attr("rel");
+        return confirm('Delete page "' + name + '" and all descendants?');
+    });
+});
+</script>
+
+{% endblock %}

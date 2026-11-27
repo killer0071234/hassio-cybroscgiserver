@@ -1,7 +1,7 @@
 from typing import List, Union
 
-from local.services.rw_service.subservices.plc_comm_service.data_type import \
-    DataType
+from scgi_server.local.services.rw_service.subservices.plc_comm_service \
+    .data_type import DataType
 
 
 def split_at_index(sequence: List[Union[int, DataType]], index: int):

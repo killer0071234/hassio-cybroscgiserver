@@ -1,0 +1,22 @@
+{% extends "base/base.html" %}
+
+{% block body_content %}
+
+<div id="insert_object">
+    <h1>Insert {{ item.get_type }} object</h1>
+
+    <table class="properties">
+        <input type="hidden" name="count" id="count" value="" />
+        {% for param in item.get_params %}
+        <tr>
+            <td class="col1">{{ param.0 }}:</td>
+            <td class="col2"><input type="text" name="param_{{ forloop.counter }}" id="param_{{ forloop.counter }}" style="width: 200px;" value="{{ param.1 }}" /></td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td class="col1">&nbsp;</td>
+            <td class="col2" style="text-align: right;"><button class="button" id="btn_insert"> Insert </button></td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% load static %}
+<h3>Page order</h3>
+<table id="page_order">
+</table>
+
+{% for p in items %}
+<input type="hidden" name="order_{{ forloop.counter0 }}" id="order_{{ forloop.counter0 }}" value=""/>
+{% endfor %}
+
+{% if add_item %}
+<input type="hidden" name="order_{{ items.count }}" id="order_{{ items.count }}" value=""/>
+{% endif %}
+
+<script type="text/javascript">
+    let order_items = [
+        {% for p in items %}
+        ["{{ p.format_name|truncatewords:7 }}", {{ p.id }}]{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        {% if add_item %}
+        , ["{{ current_item.format_name|truncatewords:7 }}", {{ current_item.id }}]
+        {% endif %}
+    ];
+
+    function attach_events()
+    {
+        $(".move_up").click(function() {
+            const n = parseInt($(this).attr("rel"));
+            const t = order_items[n - 1];
+            order_items[n - 1] = order_items[n];
+            order_items[n] = t;
+            $("#order_changed").val("1");
+            order_items_to_table();
+            return false;
+        });
+
+        $(".move_dn").click(function() {
+            const n = parseInt($(this).attr("rel"));
+            const t = order_items[n + 1];
+            order_items[n + 1] = order_items[n];
+            order_items[n] = t;
+            $("#order_changed").val("1");
+            order_items_to_table();
+            return false;
+        });
+    }
+
+    function order_items_to_table()
+    {
+        let html = "";
+        let item;
+        let up_img;
+        let dn_img;
+        let tr_class;
+
+        for (let i = 0; i < order_items.length; i++) {
+            item = order_items[i];
+
+            up_img = i > 0 ? '<a href="#" class="move_up" rel="' + i + '"><img src="{% static 'img/ico_move_up.png' %}" alt=""/></a>' : '&nbsp;';
+            dn_img = i < order_items.length - 1 ? '<a href="#" class="move_dn" rel="' + i + '"><img src="{% static 'img/ico_move_dn.png' %}" alt=""/></a>' : '&nbsp;';
+
+            tr_class = item[1] === {{ current_item.id }} ? "current" : "";
+
+            html += '<tr class="' + tr_class + '">' +
+                    '<td class="col1">' + item[0] + '<td>' +
+                    '<td class="col2">' + up_img + '</td>' +
+                    '<td class="col3">' + dn_img + '</td>' +
+                    '</tr>';
+        }
+
+        $("#page_order").html(html);
+
+        attach_events();
+    }
+
+    $(function() {
+        order_items_to_table();
+    });
+</script>

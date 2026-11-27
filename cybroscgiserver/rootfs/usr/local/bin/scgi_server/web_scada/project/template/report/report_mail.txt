@@ -1,0 +1,4 @@
+{% for report in reports %}
+{{ report.report_text|safe }}
+
+{% endfor %}

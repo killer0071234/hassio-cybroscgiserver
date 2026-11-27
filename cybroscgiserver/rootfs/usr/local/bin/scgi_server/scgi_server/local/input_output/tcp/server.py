@@ -1,10 +1,12 @@
 import asyncio
 import socket
 from asyncio import StreamReader, StreamWriter, AbstractEventLoop
+from asyncio.base_events import Server
 from typing import Optional, List
 
 from lib.general.conditional_logger import ConditionalLogger
 from lib.general.tls import create_server_tls_context
+from lib.startup.exceptions import TCPPortError
 from scgi_server.local.input_output.scgi.scgi_server import ScgiServer
 from scgi_server.local.input_output.websocket.server_handler import \
     WebSocketServerHandler
@@ -31,7 +33,7 @@ class TCPServer:
 
         self._websockets: List[WebSocketServerHandler] = []
 
-        self._server: Optional['Server'] = None
+        self._server: Optional[Server] = None
 
     async def start(self):
         if self._tls_enabled:
@@ -53,7 +55,12 @@ class TCPServer:
                              socket.SOCK_STREAM)
         if ipv6:
             sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-        sock.bind((self._bind_address, self._port))
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
+        try:
+            sock.bind((self._bind_address, self._port))
+        except OSError as e:
+            raise TCPPortError(e)
 
         self._server = await asyncio.start_server(
             self._handle,
@@ -63,15 +70,13 @@ class TCPServer:
         )
         (host, port, *rest) = self._server.sockets[0].getsockname()
         self._log.info(lambda: f"Listening on {host}:{port}")
-        await self._server.wait_closed()
-        sock.close()
-
-    def stop(self):
-        self._log.info(lambda: f"Stopping server")
-        self._server.close()
+        #await self._server.serve_forever()
+        #sock.close()
 
     async def send_to_clients(self, data: bytes):
         """Sends WebSocket message to all connected WebSocket clients.
+
+        :param data: WebSocket message to send.
         """
         return await asyncio.gather(*(
             ws.send_payload(data) for ws in self._websockets
@@ -80,6 +85,11 @@ class TCPServer:
     async def _handle(self,
                       reader: StreamReader,
                       writer: StreamWriter) -> None:
+        """Handler for client communication.
+
+        :param reader: Stream reader for data sent by client.
+        :param writer: Stream writer through which to send data to client.
+        """
         request_bytes = await reader.read(self.PAYLOAD_BYTES)
         if request_bytes != b'':
             if request_bytes.find(b'Connection: Upgrade') != -1:
@@ -98,3 +108,4 @@ class TCPServer:
                 writer.write(response_bytes)
                 await writer.drain()
                 writer.close()
+                await writer.wait_closed()

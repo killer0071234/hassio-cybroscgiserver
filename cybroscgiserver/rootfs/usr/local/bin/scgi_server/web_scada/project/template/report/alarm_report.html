@@ -1,0 +1,31 @@
+<table class="report">
+	<tr class="title">
+		<th colspan=7>Alarms and events report for plant {{ plant.name }} from {{ alarm_report.get_local_timestamp_from|date:"Y-m-d H:i:s" }} to {{ alarm_report.get_local_timestamp_to|date:"Y-m-d H:i:s" }}</th>
+	</tr>
+	<tr class="hdr">
+		<th class="col_type">&nbsp;</th>
+		<th class="col_raised">Raised</th>
+		<th class="col_gone">Gone</th>
+		<th class="col_tag">Tag</th>
+		<th class="col_msg">Message</th>
+		<th class="col_status">Status</th>
+		<th class="col_ack">Acknowledged</th>
+	</tr>
+	{% for alarm in alarm_report.alarms %}
+	<tr class="{% if alarm.alarm_type == 1 %}alarm{% else %}event{% endif %}{% if alarm.timestamp_ack %}{% else %} not_ack{% endif %}">
+		<td class="col_type">
+		{% if alarm.alarm_type == 1 %}
+            <img src="cid:ico_exclamation_red" alt="alarm" title="alarm{% if alarm.alarm_class %} - {{ alarm.alarm_class }}{% endif %}" />
+        {% else %}
+            <img src="cid:ico_exclamation" alt="event" title="event{% if alarm.alarm_class %} - {{ alarm.alarm_class }}{% endif %}" />
+        {% endif %}
+        </td>
+		<td class="col_raised">{% if alarm.timestamp_raise %}{{ alarm.get_local_timestamp_raise|date:"Y-m-d H:i:s" }}{% else %}&nbsp;{% endif %}</td>
+		<td class="col_gone">{% if alarm.timestamp_gone %}{{ alarm.get_local_timestamp_gone|date:"Y-m-d H:i:s" }}{% else %}-{% endif %}</td>
+		<td class="col_tag">{{ alarm.tag }}</td>
+		<td class="col_msg">{{ alarm.message }}</td>
+		<td class="col_status">{% if alarm.timestamp_gone %}gone{% else %}active{% endif %}</td>
+		<td class="col_ack">{% if alarm.timestamp_ack %}{{ alarm.get_local_timestamp_ack|date:"Y-m-d H:i:s" }}{% else %}-{% endif %}</td>
+	</tr>
+	{% endfor %}
+</table>

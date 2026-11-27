@@ -1,0 +1,4 @@
+Event report for plant {{ plant.name }} from {{ event_report.get_local_timestamp_from|date:"d.m.Y H:i:s" }} to {{ event_report.get_local_timestamp_to|date:"d.m.Y H:i:s" }}
+Raised              Gone                Tag                                      Message                                            Change                                        
+{% for alarm in event_report.alarms %}{% if alarm.timestamp_raise %}{{ alarm.get_local_timestamp_raise|date:"d.m.Y H:i:s" }}{% else %}                   {% endif %} {% if alarm.timestamp_gone %}{{ alarm.get_local_timestamp_gone|date:"d.m.Y H:i:s" }}{% else %}still active       {% endif %} {{ alarm.tag|stringformat:"-40s" }} {{ alarm.message|stringformat:"-50s" }} {{ alarm.get_changes|stringformat:"-30s" }}
+{% endfor %}

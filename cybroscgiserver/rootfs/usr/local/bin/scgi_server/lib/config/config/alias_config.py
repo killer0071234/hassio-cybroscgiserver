@@ -1,5 +1,6 @@
-from configparser import NoSectionError, ConfigParser
 from typing import Dict
+
+from lib.config.ini_config_parser import IniConfigParser, IniConfigParserError
 
 
 class AliasConfig:
@@ -22,14 +23,16 @@ class AliasConfig:
         return self.aliases
 
     @classmethod
-    def load(cls, cp: ConfigParser, default: 'Config'):
+    def load(cls, icp: IniConfigParser, default: 'AliasConfig'):
         section = "ALIAS"
 
         aliases = default.props()
 
         try:
-            aliases_from_conf = dict(cp.items(section))
-        except NoSectionError:
+            aliases_from_conf: Dict[str, str] = {
+                k: v[0] for k, v in icp.items(section)
+            }
+        except IniConfigParserError:
             aliases_from_conf = aliases
 
         return cls(aliases_from_conf)

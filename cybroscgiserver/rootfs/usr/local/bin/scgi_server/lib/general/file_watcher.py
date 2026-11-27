@@ -1,8 +1,8 @@
 import os
 import sys
-from asyncio import AbstractEventLoop
 from pathlib import Path
-from typing import Callable, Dict, Optional
+from typing import Callable, Optional
+from threading import Timer
 
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
@@ -19,37 +19,45 @@ class FileWatcher:
 
     On each change emits timestamp and file path as a tuple.
     """
-    FILES = {}
 
     class EventHandler(FileSystemEventHandler):
+        def __init__(self,
+                     monitored_file: Path,
+                     callback: Callable[[], None]):
+            super().__init__()
+
+            self._monitored_file = monitored_file
+            self._callback = callback
+
         def on_any_event(self, event: FileSystemEvent) -> None:
-            if event.is_directory or "~" in event.src_path:
+            if event.is_directory:
                 return
-            super().on_any_event(event)
 
-            FileWatcher.update_subject_with_file(
-                Path(event.src_path.replace("\\", "/"))
-            )
+            src_path = Path(event.src_path)
 
-    def __init__(self,
-                 loop: AbstractEventLoop,
-                 log: ConditionalLogger,
-                 monitored_path: Path,
-                 monitored_files: Dict[Path, Callable[[], None]]):
-        self._loop: AbstractEventLoop = loop
-        self._log: ConditionalLogger = log
-        self._monitored_path: Path = monitored_path
-        self._monitored_files: Dict[Path, Callable[[], None]] = monitored_files
+            dest = getattr(event, "dest_path", None)
+            dest_path = Path(dest) if dest else None
 
-        FileWatcher.FILES = {
-            str(filename): {
-                'time': os.stat(filename).st_mtime,
-                'callback': callback
-            }
-            for filename, callback in monitored_files.items()
-        }
+            # React only if the monitored file is either the source
+            # or destination of the filesystem event.
+            if src_path.name == self._monitored_file.name:
+                self._callback()
 
+            elif dest_path is not None and dest_path.name == self._monitored_file.name:
+                self._callback()
+
+
+    EVENT_DEBOUNCE_TIMER = 0.1   # time [s] after which filesystem events are processed
+
+    def __init__(self, 
+                 monitored_file: Path, 
+                 callback: Callable[[], None]):
+        self._monitored_file = monitored_file
+        self._callback = callback
+        self._last_modified = os.stat(monitored_file).st_mtime
+        
         self._observer: Optional[Observer] = None
+        self._check_timer: Optional[Timer] = None
         self._running = False
 
     def start(self) -> None:
@@ -61,8 +69,11 @@ class FileWatcher:
         self._observer = Observer()
 
         self._observer.schedule(
-            self.EventHandler(),
-            self._monitored_path.as_posix(),
+            self.EventHandler(
+                self._monitored_file,
+                self.reload_timer
+            ),
+            self._monitored_file.parent.as_posix(),
             recursive=False
         )
 
@@ -74,28 +85,51 @@ class FileWatcher:
 
         self._running = False
 
+        if self._check_timer is not None:
+            self._check_timer.cancel()
+            self._check_timer = None
+
         self._observer.stop()
         self._observer = None
 
-    @classmethod
-    def update_subject_with_file(cls, file: Path) -> None:
-        filename = str(file)
-        if filename in FileWatcher.FILES:
-            new_time = os.stat(file).st_mtime
-            old_time = FileWatcher.FILES[filename]['time']
-            if old_time == 0.0:
-                FileWatcher.FILES[filename]['time'] = new_time
-            elif new_time != old_time:
-                FileWatcher.FILES[filename]['time'] = new_time
-                FileWatcher.FILES[filename]['callback']()
+    def reload_timer(self) -> None:
+        """ Reload the debounce timer for the monitored file. """
+
+        if self._check_timer is not None:
+            self._check_timer.cancel()
+
+        self._check_timer = Timer(self.EVENT_DEBOUNCE_TIMER, self.update_subject_with_file)
+
+        self._check_timer.start()
+
+    def update_subject_with_file(self) -> None:
+        """ Check the file timestamp after events settle. """
+
+        self._check_timer = None
+
+        try:
+            new_time = os.stat(self._monitored_file).st_mtime
+
+        except FileNotFoundError:
+            # The file is still missing after debounce period. 
+            # Restart so the config loader can report the missing config.
+            self._callback()
+            return
+
+        if new_time != self._last_modified:
+            self._last_modified = new_time
+            self._callback()
 
     @staticmethod
     def restart(log: ConditionalLogger) -> None:
         log.info(sys.argv[0] + " " + sys.executable)
         args = sys.argv[:]
-        log.info('Re-spawning %s' % ' '.join(args))
+
+        log.info("Re-spawning %s" % " ".join(args))
+
         args.insert(0, sys.executable)
-        if sys.platform == 'win32':
+
+        if sys.platform == "win32":
             args = ['"%s"' % arg for arg in args]
 
         os.chdir(os.getcwd())

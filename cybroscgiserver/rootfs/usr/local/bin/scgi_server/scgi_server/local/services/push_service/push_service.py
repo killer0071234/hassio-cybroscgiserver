@@ -3,11 +3,10 @@ from asyncio import AbstractEventLoop
 from typing import Optional
 
 from lib.general.conditional_logger import ConditionalLogger
-from scgi_server.local.defaults import MAX_FRAME_BYTES, PUSH_NAD, \
-    ABUS_BROADCAST_PORT
+from scgi_server.local.defaults import MAX_FRAME_BYTES, PUSH_NAD
 from scgi_server.local.general.errors import ExchangerTimeoutError
 from scgi_server.local.general.transaction_id_generator import \
-    transaction_id_generator
+    TransactionIdGeneratorType
 from scgi_server.local.input_output.abus_stack.abus.abus_exchanger import \
     AbusExchanger
 from scgi_server.local.input_output.abus_stack.abus.abus_message import \
@@ -29,7 +28,8 @@ class PushService:
                  loop: AbstractEventLoop,
                  plc_info_service: PlcInfoService,
                  plc_activity_service: PlcActivityService,
-                 push_activity_service: PushActivityService):
+                 push_activity_service: PushActivityService,
+                 trans_id_generator: TransactionIdGeneratorType):
         self._log: ConditionalLogger = log
         self._loop: AbstractEventLoop = loop
         self._plc_info_service: PlcInfoService = plc_info_service
@@ -39,9 +39,7 @@ class PushService:
         )
         self._nad: int = PUSH_NAD
         self._max_frame_length: int = MAX_FRAME_BYTES
-        self._transaction_id_generator = (
-            transaction_id_generator(0, 0xFFFF)
-        )
+        self._transaction_id_generator = trans_id_generator
         self._exchanger: Optional[AbusExchanger] = None
 
     def set_exchanger(self, exchanger: AbusExchanger) -> None:
@@ -76,8 +74,6 @@ class PushService:
             self._log.debug(lambda: f"Push from c{plc_nad} acknowledgment "
                                     f"failed with timeout",
                             exc_info=e)
-            self._log.debug(lambda: f"Push from c{plc_nad} acknowledgment "
-                                    f"failed with timeout: {e}")
 
     def _create_push_ack_message(self,
                                  ip: str,
@@ -86,4 +82,5 @@ class PushService:
         addr = (ip, port)
         transaction_id = next(self._transaction_id_generator)
         command_frame = CommandFrameUtil.create_push_ack()
+
         return AbusMessage(addr, self._nad, nad, transaction_id, command_frame)

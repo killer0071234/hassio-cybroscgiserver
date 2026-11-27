@@ -1,7 +1,5 @@
 from typing import Dict
 
-from lib.general.conditional_logger import ConditionalLogger
-
 
 class AliasError(ValueError):
     def __init__(self, nad: str):
@@ -12,10 +10,8 @@ class AliasService:
     DELIMITER = "."
 
     def __init__(self,
-                 log: ConditionalLogger,
                  aliases: Dict[str, str],
                  reversed_aliases: Dict[str, str]):
-        self._log: ConditionalLogger = log
         self._aliases = aliases
         self._reversed = reversed_aliases
 

@@ -5,9 +5,9 @@ from asyncio import AbstractEventLoop, Future
 from datetime import timedelta
 from typing import Tuple, Optional
 
-from local.input_output.abus_stack.abus.abus_message import AbusMessage
 from scgi_server.local.general.errors import ExchangerTimeoutError
-from scgi_server.local.input_output.abus_stack.abus.abus_message import AbusMessage
+from scgi_server.local.input_output.abus_stack.abus.abus_message \
+    import AbusMessage
 
 
 class AbusExchanger:
@@ -21,20 +21,20 @@ class AbusExchanger:
         self._communication_loop: AbstractEventLoop = loop
         self._sender: 'Router' = sender
 
-        # sequence of (request, future) tuples where future will be resolved
-        # with future response or error
+        # Sequence of (request, future) tuples where the future will be
+        # resolved with a future response or error.
         if sys.version_info < (3, 10):
             self._requests_queue = asyncio.Queue(loop=self._communication_loop)
         else:
             self._requests_queue = asyncio.Queue()
 
-        # holds exchange tag of the most recently sent request. It has to be
-        # remembered throughout the read cycle so it can be compared with
-        # responses' exchange tags
+        # Holds the exchange tag of the most recently sent request. It has to
+        # be remembered throughout the read cycle, so it can be compared with
+        # response exchange tags.
         self._last_exchange_tag: Optional[Tuple[int, int, int]] = None
 
-        # pending response for the request which has just been pulled from
-        # queue and sent
+        # Pending response for the request which has just been pulled from
+        # the queue and sent.
         self._current_pending_response: Optional[Future] = None
 
         self._timeout: timedelta = timeout
@@ -57,8 +57,7 @@ class AbusExchanger:
                 except ExchangerTimeoutError as e:
                     future.set_exception(e)
         except Exception as e:
-            logging.getLogger().error('Error in abus exchanger')
-            logging.getLogger().error(e)
+            logging.getLogger().error(f'Error in abus exchanger: {e}')
 
     async def exchange_threadsafe(self,
                                   request: AbusMessage) -> Future:
@@ -91,7 +90,10 @@ class AbusExchanger:
         raise ExchangerTimeoutError()
 
     async def _exchange(self, request: AbusMessage) -> AbusMessage:
-        """Sends request message and wait on response message.
+        """Sends a request message and wait on a response message.
+
+        :param request: The request message to be sent.
+        :return: Received response message.
         """
         if self._current_pending_response is not None:
             raise Exception('Current pending response should not exist')

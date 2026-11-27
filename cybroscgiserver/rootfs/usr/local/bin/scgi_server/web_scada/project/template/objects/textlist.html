@@ -1,0 +1,86 @@
+{% if code == "html" %}
+<span id="{{ id }}" class="cybro_{{ type }}">
+    {% if action == "1" %}
+        {% if rw_access %}
+    <button class="button read_value" title="{{ var }}"></button>
+    <input type="hidden" name="tag" value="{{ var }}" />
+    <input type="hidden" name="curr_index" value="{{ value_count|add:"-1" }}" />
+    <input type="hidden" name="max_index" value="{{ value_count|add:"-1" }}" />
+            {% for val in values %}
+    <input type="hidden" name="value_{{ forloop.counter0 }}" value="{{ val }}" />
+            {% endfor %}
+        {% else %}
+    <span class="read_value" title="{{ var }}"></span>
+        {% endif %}
+    {% else %}
+    <span class="read_value" title="{{ var }}"></span>
+    {% endif %}
+</span>
+
+{% elif code == "tag_update_func" %}
+function UpdateTextlist(object_id, tag_name, description, value, texts, values)
+{
+    if (!skup_update) {
+        let txt = "";
+        if (!isNaN(value)) {
+            let val = parseFloat(value);
+            let valIndex = 0;
+            for (var i = 0; i < values.length; i++) {
+                valIndex = i;
+                if (values[i] > val) {
+                    break;
+                }
+            }
+            if (valIndex < values.length) {
+                if (values[valIndex] <= val) {
+                    valIndex++;
+                }
+            }
+            if (valIndex < texts.length) {
+                txt = texts[valIndex];
+            }
+
+            $("#" + object_id + " > input[name=\"curr_index\"]").val(valIndex);
+        }
+
+        $("#" + object_id + " > .read_value").html(txt);
+        $("#" + object_id + " > .read_value").removeClass("active");
+        SetObjectTitle($("#" + object_id + " > .read_value"), tag_name, description);
+    }
+}
+
+function TextlistSubmitValue(object_id, cybro_var, curr_index, max_index)
+{
+    {% if rw_access %}
+    skup_update = true;
+
+    var next_index = curr_index + 1;
+    if (next_index > max_index) {
+        next_index = 0;
+    }
+
+    var value = GetObjectProperties(object_id)["value_" + next_index];
+    $("#" + object_id + " > input[name=\"curr_index\"]").val(next_index);
+
+    if (!isNaN(value)) {
+        SetTagValue(cybro_var, value);
+        $("#" + object_id + " > .read_value").addClass("active");
+    }
+    {% endif %}
+}
+
+{% elif code == "tag_update_code" %}
+UpdateTextlist("{{ id }}", "{{ var }}", descriptions["{{ var }}"], vars["{{ var }}"], {{ texts|safe }}, {{ change_values|safe }});
+
+{% elif code == "init_jq_binding" %}
+$(".cybro_{{ type }} > .read_value").click(function() {
+    let parent = $(this).parent();
+    let id = $(parent).attr("id");
+    let prop = GetObjectProperties(id);
+    if (prop["tag"] != null && prop["tag"].length > 0) {
+        TextlistSubmitValue(id, prop["tag"], parseInt(prop["curr_index"]), parseInt(prop["max_index"]));
+    }
+    return false;
+});
+
+{% endif %}

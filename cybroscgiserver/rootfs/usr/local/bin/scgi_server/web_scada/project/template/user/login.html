@@ -1,0 +1,43 @@
+{% extends "base/body_content.html" %}
+
+{% block title %}User sign in{% endblock %}
+
+{% block main_content %}
+<h1>Access error</h1>
+<p>Only authorized users are allowed to access this page. Please provide your user name and password to continue.</p>
+
+{% if err %}
+<p style="color: red">Invalid username or password!</p>
+{% endif %}
+
+<form id="fm" method="post" action="/accounts/login/">
+    <input type="hidden" name="next" value="{{ next }}" />
+    <table class="register_data" style="margin: 20px 0 0 100px;">
+        <tr>
+            <td class="col1">User name:</td>
+            <td class="col2"><input type="text" name="username" value="" style="width: 200px;"/></td>
+        </tr>
+        <tr>
+            <td class="col1">Password:</td>
+            <td class="col2"><input type="password" name="password" style="width: 200px;"/></td>
+        </tr>
+        <tr>
+            <td class="col1">&nbsp;</td>
+            <td class="col2" style="text-align: right;">
+                <button class="button" id="btn_submit">Log in</button>
+            </td>
+            <td>&nbsp;</td>
+        </tr>
+    </table>
+</form>
+
+<script type="text/javascript">
+$(function() {
+    $("#btn_submit").click(function() {
+        $("#fm").submit();
+        return false;
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}Manage users{% endblock %}
+
+{% block main_content %}
+<h1>Manage users</h1>
+
+<div class="toolbar">
+    <a href="/user/edit/"><img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Create new user</a>
+</div>
+
+<table class="content_items">
+    <tr>
+        <th class="col1" style="width: 120px;">User</th>
+        <th style="width: 120px;">Created by</th>
+        <th style="width: 130px;">Last login</th>
+        <th>Home page</th>
+        <th style="width: 70px;">Permissions</th>
+        <th style="width: 50px; text-align: center;">Active</th>
+        <th style="width: 50px; text-align: center;">Delete</th>
+    </tr>
+
+    {% for item in items %}
+    <tr class="hover_row">
+        <td class="col1">
+            <a href="/user/edit/{{ item.id }}/" style="display: block;" rel="{{ item.format_name }}" title="Edit user">{{ item.format_name }}</a>
+        </td>
+        <td>
+            {% if item.creator %}
+            {{ item.creator.format_name }}
+            {% else %}
+            -
+            {% endif %}
+        </td>
+        <td>{{ item.last_login|date:"d.m.Y H:i:s" }}</td>
+        <td>
+            {% for p in item.homepages.all %}
+            {{ p.get_full_path }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+            -
+            {% endfor %}
+        </td>
+        <td>{{ item.permissions.get_str }}</td>
+        <td class="col3">
+            {% if item == request.user %}
+            <img src="{% if item.is_active %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+            {% else %}
+            <a href="/user/toggle_active/{{ item.id }}/" title="Make {% if item.is_active %}inactive{% else %}active{% endif %}">
+                <img src="{% if item.is_active %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+            </a>
+            {% endif %}
+        </td>
+        <td class="col4">
+            <a href="/user/delete/{{ item.id }}/" class="delete_item" rel="{{ item.format_name }}">
+                <img src="{% static 'img/ico_minus.png' %}" alt="" title="Delete" />
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="abbr_legend">
+    <table>
+        <tr>
+            <td class="col1">A</td>
+            <td class="col2">Server admin</td>
+        </tr>
+        <tr>
+            <td class="col1">U</td>
+            <td class="col2">Manage users</td>
+        </tr>
+        <tr>
+            <td class="col1">C</td>
+            <td class="col2">Manage controllers</td>
+        </tr>
+        <tr>
+            <td class="col1">T</td>
+            <td class="col2">Manage templates</td>
+        </tr>
+        <tr>
+            <td class="col1">M</td>
+            <td class="col2">Manage media</td>
+        </tr>
+        <tr>
+            <td class="col1">S</td>
+            <td class="col2">Manage site content</td>
+        </tr>
+        <tr>
+            <td class="col1">P</td>
+            <td class="col2">Manage plants</td>
+        </tr>
+        <tr>
+            <td class="col1">W</td>
+            <td class="col2">Write tags</td>
+        </tr>
+    </table>
+</div>
+
+
+<script type="text/javascript">
+$(function() {
+    let relations = {};
+
+    $.get('/user/related/')
+        .done(function(data) {
+            relations = data;
+            window.relations = relations;
+        })
+        .fail(function () {
+            console.error("failed to get relations")
+        })
+
+    $(".delete_item").click(function() {
+        const uid = $(this).attr('href').split('/')[3];
+        const name = $(this).attr("rel");
+
+        let resp;
+        if (uid in relations && !jQuery.isEmptyObject(relations[uid])) {
+            let rels = Object.keys(relations[uid]).join("\n");
+
+            resp = confirm("User '" + name + "' has related objects which will be deleted along user:\n\n" + rels);
+            if (resp === true) {
+                resp = confirm("Delete user '" + name + "' with all related objects:\n\n" + rels);
+            }
+        }
+        else {
+            resp = confirm('Delete user "' + name + "'?");
+        }
+
+        return resp
+    });
+});
+</script>
+
+{% endblock %}

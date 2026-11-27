@@ -1,0 +1,7 @@
+body {
+    background-color: white;
+}
+
+#head, #col_one, #footer {
+    display: none;
+}

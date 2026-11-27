@@ -1,0 +1,193 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+
+{% block title %}
+    {% if is_template %}
+        {% if item.id %}Edit template - {{ item.format_name }}{% else %}New template{% endif %}
+    {% else %}
+        {% if item.id %}Edit page - {{ item.format_name }}{% else %}New page{% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<script type="text/javascript" src="{% static 'inc/js/ui/jquery-ui.min.js' %}"></script>
+<link href="{% static 'inc/themes/smoothness/jquery-ui.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block main_content %}
+<div id="page_edit">
+    <h1>
+        {% if is_template %}
+            {% if item.id %}Edit template - {{ item.format_name }}{% else %}New template{% endif %}
+        {% else %}
+            {% if item.id %}Edit page - {{ item.format_name }}{% else %}New page{% endif %}
+        {% endif %}
+    </h1>
+
+    <form id="fm"
+          method="post"
+        {% if is_template %}
+          action="/template/edit/{% if item.id %}{{ item.id }}/{% endif %}"
+        {% else %}
+          action="/page/edit/{% if is_site_page %}0{% else %}{{ item.plant.id }}{% endif %}/{% if item.id %}{{ item.id }}/{% endif %}"
+        {% endif %}
+    >
+        <div class="toolbar">
+            {% if is_template %}
+            <a href="/template/list/" id="cancel"><img src="{% static 'img/ico_signout.png' %}" class="ico" alt=""/>Back</a>
+            {% else %}
+            <a href="{% if is_site_page %}/page/site_list/{% else %}/plant/page_list/{{ plant_id }}/{% endif %}" id="cancel"><img src="{% static 'img/ico_signout.png' %}" class="ico" alt=""/>Back</a>
+            <a href="#" id="save_and_manage"><img src="{% static 'img/ico_save.png' %}" class="ico" alt=""/>Save and go to manage</a>
+                {% if item.published %}
+            <a href="#" id="save_and_preview"><img src="{% static 'img/ico_save.png' %}" class="ico" alt=""/>Save and go to page</a>
+                {% endif %}
+            {% endif %}
+            <a href="#" id="save"><img src="{% static 'img/ico_save.png' %}" class="ico" alt=""/>{% if is_template %}Save and go to manage{% else %}Save and stay here{% endif %}</a>
+        </div>
+        {% if item.id %}
+        <table class="info">
+            <tr>
+                <td class="col1">created on:</td>
+                <td class="col2">{{ item.date_added|date:"d.m.Y H:i:s" }}</td>
+            </tr>
+            <tr>
+                <td class="col1">created by:</td>
+                <td class="col2">{{ item.author.format_name }}</td>
+            </tr>
+            <tr>
+                <td class="col1">modified on:</td>
+                <td class="col2">{{ item.last_modified|date:"d.m.Y H:i:s" }}</td>
+            </tr>
+            <tr>
+                <td class="col1">modified by:</td>
+                <td class="col2">{% if item.modified_by %}{{ item.modified_by.format_name }}{% else %}-{% endif %}</td>
+            </tr>
+        </table>
+        {% endif %}
+
+        <div class="col_left">
+            <h3>General</h3>
+
+            <table class="edit">
+                <tr>
+                    <td class="col1">{% if is_template %}Template{% else %}Page{% endif %} name:</td>
+                    <td class="col2"><input type="text" name="name" id="name" style="width: 300px;" value="{{item.name }}" /></td>
+                </tr>
+                <tr>
+                    <td class="col1">Description:</td>
+                    <td class="col2"><input type="text" name="description" id="description" style="width: 300px;" value="{{item.description }}" /></td>
+                </tr>
+                {% if not is_template %}
+                <tr>
+                    <td class="col1">Update period:</td>
+                    <td class="col2">
+                        <select name="update_period" id="update_period">
+                            {% for p in update_periods %}
+                                <option value="{{ p.id }}" {% if p == item.update_period %}selected="selected"{% endif %}>
+                                    {{ p.text }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                    {% if not editing_root_page %}
+                <tr>
+                    <td class="col1">Parent page:</td>
+                    <td class="col2">
+                        <select name="parent" id="parent">
+                            {% if is_site_page %}
+                                {% for p in request.user.get_all_site_pages %}
+                                    {% if p != item %}
+                                        <option value="{{ p.id }}" {% if p == item.parent %}selected="selected"{% endif %}>
+                                            {{ p.get_list_indent|safe }}
+                                            {{ p.name }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {% for p in item.plant.get_all_pages %}
+                                    {% if p != item %}
+                                        <option value="{{ p.id }}" {% if p == item.parent %}selected="selected"{% endif %}>
+                                            {{ p.get_list_indent|safe }}
+                                            {{ p.name }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </td>
+                </tr>
+                    {% endif %}
+                {% endif %}
+
+                <tr>
+                    <td class="col1">&nbsp;</td>
+                    <td class="col2">&nbsp;</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="col_right" id="page_order_edit">
+        </div>
+
+        <div class="cleaner">&nbsp;</div>
+
+        <h3 style="margin-top: 20px;">Content</h3>
+
+        <div class="toolbar">
+        </div>
+
+        <textarea name="content" id="editor" rows="5" cols="10" style="width: 740px; height: 500px;">{{item.content }}</textarea>
+
+        <input type="hidden" name="order_changed" id="order_changed" value="0" />
+        <input type="hidden" name="operation" id="operation" value="" />
+    </form>
+</div>
+
+<script type="application/javascript">
+function load_edit_order_area()
+{
+    {% if not is_template and not editing_root_page %}
+    const parent_id = $("#parent option:selected").val();
+    const current_id = {% if item.id %}{{ item.id }}{% else %}0{% endif %};
+
+    $("#page_order_edit").load("/page/edit/get_order_area/" + parent_id + "/" + current_id + "/");
+    {% endif %}
+}
+
+function submit_page()
+{
+    if ($("#order_changed").val() === "1") {
+        for (let i = 0; i < order_items.length; i++) {
+            $("#order_" + i).val(order_items[i][1]);
+        }
+    }
+    $("#fm").submit();
+}
+
+$(function() {
+    load_edit_order_area();
+
+    $("#parent").change(function() {
+        load_edit_order_area();
+    });
+
+    $("#save").click(function() {
+        submit_page();
+        return false;
+    });
+
+    $("#save_and_preview").click(function() {
+        $("#operation").val("preview");
+        submit_page();
+        return false;
+    });
+
+    $("#save_and_manage").click(function() {
+        $("#operation").val("back_to_manage");
+        submit_page();
+        return false;
+    });
+});
+</script>
+{% endblock %}

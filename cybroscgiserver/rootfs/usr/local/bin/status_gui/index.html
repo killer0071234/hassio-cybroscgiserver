@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CybroScgiServer</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --text: #212121;
+      --muted: #727272;
+      --border: #e0e0e0;
+      --ok: #2e7d32;
+      --warn: #ef6c00;
+      --error: #c62828;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111111;
+        --card: #1c1c1c;
+        --text: #e1e1e1;
+        --muted: #9b9b9b;
+        --border: #333333;
+        --ok: #66bb6a;
+        --warn: #ffa726;
+        --error: #ef5350;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 400; margin: 0 0 16px; }
+    h2 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .label { color: var(--muted); font-size: 12px; }
+    .value { font-size: 16px; overflow-wrap: anywhere; }
+    .badge {
+      display: inline-block;
+      padding: 0 8px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      background: var(--muted);
+    }
+    .badge.ok { background: var(--ok); }
+    .badge.warn { background: var(--warn); }
+    .badge.error { background: var(--error); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    /* shrink to the content width */
+    .narrow { width: 1%; }
+    .empty, .footer { color: var(--muted); }
+    .error-text { color: var(--error); margin-top: 12px; overflow-wrap: anywhere; }
+    .footer { font-size: 12px; }
+    button {
+      font: inherit;
+      font-size: 13px;
+      padding: 2px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--muted); }
+    dialog {
+      width: min(900px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+    }
+    dialog::backdrop { background: rgb(0 0 0 / 40%); }
+    dialog[open] { display: flex; flex-direction: column; }
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dialog-head h2 { margin: 0; flex: 1; }
+    .dialog-head input {
+      font: inherit;
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      min-width: 0;
+      width: 200px;
+    }
+    .dialog-body { overflow: auto; padding: 0 16px 16px; }
+    .dialog-body td.description { white-space: normal; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>CybroScgiServer</h1>
+
+  <section class="card">
+    <h2>Server</h2>
+    <div class="grid">
+      <div><div class="label">State</div><div class="value" id="state">–</div></div>
+      <div><div class="label">Server version</div><div class="value" id="server-version">–</div></div>
+      <div><div class="label">App version</div><div class="value" id="app-version">–</div></div>
+      <div><div class="label">Uptime</div><div class="value" id="uptime">–</div></div>
+      <div><div class="label">SCGI requests</div><div class="value" id="request-count">–</div></div>
+      <div><div class="label">Push port</div><div class="value" id="push-port">–</div></div>
+    </div>
+    <div class="error-text" id="error" hidden></div>
+  </section>
+
+  <section class="card">
+    <h2>Controllers (<span id="controller-count">0</span>)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>NAD</th>
+            <th>Added by</th>
+            <th>Status</th>
+            <th>IP address:port</th>
+            <th class="num narrow" title="Response time in milliseconds">ms</th>
+            <th class="num narrow" title="Communication errors">Errors</th>
+            <th>Program sent</th>
+            <th class="narrow"></th>
+          </tr>
+        </thead>
+        <tbody id="controllers"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="no-controllers" hidden>No controllers found.</div>
+  </section>
+
+  <div class="footer">Last update: <span id="updated">–</span></div>
+</main>
+
+<dialog id="variables-dialog">
+  <div class="dialog-head">
+    <h2><span id="variables-title"></span> variables (<span id="variables-count">0</span>)</h2>
+    <input type="search" id="variables-filter" placeholder="Filter" aria-label="Filter variables">
+    <button type="button" id="variables-close">Close</button>
+  </div>
+  <div class="dialog-body">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody id="variables"></tbody>
+    </table>
+    <div class="empty" id="variables-message" hidden></div>
+  </div>
+</dialog>
+
+<script>
+  const REFRESH_MS = 5000;
+
+  function show(value) {
+    return value === null || value === undefined || value === "" || value === "?" ? "–" : value;
+  }
+
+  function badge(text, level) {
+    const el = document.createElement("span");
+    el.className = "badge " + level;
+    el.textContent = text;
+    return el;
+  }
+
+  function stateLevel(state) {
+    if (state === "active") return "ok";
+    if (state === "unreachable") return "error";
+    return "warn";
+  }
+
+  function plcLevel(status) {
+    if (status === "ok") return "ok";
+    if (status === "offline") return "error";
+    return "warn";
+  }
+
+  function setText(id, value) {
+    document.getElementById(id).textContent = show(value);
+  }
+
+  function render(data) {
+    const state = document.getElementById("state");
+    state.replaceChildren(badge(data.state, stateLevel(data.state)));
+    setText("server-version", data.server_version);
+    setText("app-version", data.app_version);
+    setText("uptime", data.uptime);
+    setText("request-count", data.request_count);
+    setText("push-port", data.push_port_status);
+
+    const error = document.getElementById("error");
+    error.hidden = !data.error;
+    error.textContent = data.error || "";
+
+    const body = document.getElementById("controllers");
+    body.replaceChildren(...data.controllers.map((c) => {
+      const row = document.createElement("tr");
+      const cells = [
+        "c" + c.nad,
+        show(c.origin),
+        badge(show(c.plc_status) === "–" ? "unknown" : c.plc_status, plcLevel(c.plc_status)),
+        show(c.ip_port),
+        show(c.response_time),
+        show(c.com_error_count),
+        show(c.timestamp === "None" ? null : c.timestamp),
+        c.plc_status === "ok" ? variablesButton(c.nad) : "",
+      ];
+      cells.forEach((value, i) => {
+        const cell = document.createElement("td");
+        if (i === 4 || i === 5) cell.className = "num narrow";
+        cell.append(value);
+        row.append(cell);
+      });
+      return row;
+    }));
+    document.getElementById("controller-count").textContent = data.controllers.length;
+    document.getElementById("no-controllers").hidden = data.controllers.length > 0;
+  }
+
+  function variablesButton(nad) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Variables";
+    button.addEventListener("click", () => showVariables(nad));
+    return button;
+  }
+
+  let variables = [];
+  // nad of the open dialog, ignores late answers for a previously opened one
+  let variablesNad = null;
+
+  function setVariablesMessage(text) {
+    const message = document.getElementById("variables-message");
+    message.hidden = !text;
+    message.textContent = text || "";
+  }
+
+  function renderVariables() {
+    const filter = document.getElementById("variables-filter").value.trim().toLowerCase();
+    const shown = variables.filter((v) =>
+      !filter
+      || v.name.toLowerCase().includes(filter)
+      || v.description.toLowerCase().includes(filter));
+    document.getElementById("variables").replaceChildren(...shown.map((v) => {
+      const row = document.createElement("tr");
+      [v.name, v.type, v.description].forEach((value, i) => {
+        const cell = document.createElement("td");
+        if (i === 2) cell.className = "description";
+        cell.textContent = value;
+        row.append(cell);
+      });
+      return row;
+    }));
+    document.getElementById("variables-count").textContent =
+      shown.length === variables.length ? variables.length : shown.length + "/" + variables.length;
+    if (variables.length > 0) {
+      setVariablesMessage(shown.length === 0 ? "No variables match the filter." : "");
+    }
+  }
+
+  async function showVariables(nad) {
+    const dialog = document.getElementById("variables-dialog");
+    document.getElementById("variables-title").textContent = "c" + nad;
+    document.getElementById("variables-filter").value = "";
+    variablesNad = nad;
+    variables = [];
+    renderVariables();
+    setVariablesMessage("Loading…");
+    dialog.showModal();
+
+    try {
+      const response = await fetch("api/variables?nad=" + nad, { cache: "no-store" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const result = await response.json();
+      if (variablesNad !== nad) return;
+      variables = result;
+      renderVariables();
+      if (variables.length === 0) setVariablesMessage("The controller has no variables.");
+    } catch (e) {
+      if (variablesNad === nad) setVariablesMessage("Could not load variables: " + e.message);
+    }
+  }
+
+  document.getElementById("variables-filter").addEventListener("input", renderVariables);
+  document.getElementById("variables-close").addEventListener("click", () => {
+    document.getElementById("variables-dialog").close();
+  });
+
+  async function refresh() {
+    try {
+      // relative url, so it works behind the ingress path
+      const response = await fetch("api/status", { cache: "no-store" });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      render(await response.json());
+      document.getElementById("updated").textContent = new Date().toLocaleTimeString();
+    } catch (e) {
+      const error = document.getElementById("error");
+      error.hidden = false;
+      error.textContent = "Could not load status: " + e.message;
+    } finally {
+      setTimeout(refresh, REFRESH_MS);
+    }
+  }
+
+  refresh();
+</script>
+</body>
+</html>

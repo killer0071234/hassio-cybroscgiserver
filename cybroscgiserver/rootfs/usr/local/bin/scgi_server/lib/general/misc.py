@@ -2,9 +2,9 @@ import asyncio
 
 
 def create_task_callback(log):
-    """Creates callback which will log when the task was cancelled. It is used
+    """Creates callback which will log when the task was canceled. It is used
     when we schedule the task on the loop and want to know that it was
-    cancelled.
+    canceled.
 
     Args:
         log: logger which will be used to report task cancellation
@@ -12,7 +12,6 @@ def create_task_callback(log):
     Returns:
         Callback
     """
-
     def callback(future):
         try:
             return future.result()

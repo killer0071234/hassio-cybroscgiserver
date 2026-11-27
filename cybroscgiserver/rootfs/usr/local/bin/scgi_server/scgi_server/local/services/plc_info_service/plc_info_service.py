@@ -2,7 +2,7 @@ from asyncio import AbstractEventLoop
 from datetime import datetime, timedelta
 from typing import Generator, Iterable, Optional, List, Dict
 
-from scgi_server.local.config.config.static_plc_config import StaticPlcConfig
+from scgi_server.local.config.static_plc_config import StaticPlcConfig
 from lib.general.conditional_logger import ConditionalLogger
 from scgi_server.local.defaults import ABUS_BROADCAST_PORT
 from scgi_server.local.services.plc_info_service.plc_info import PlcInfo

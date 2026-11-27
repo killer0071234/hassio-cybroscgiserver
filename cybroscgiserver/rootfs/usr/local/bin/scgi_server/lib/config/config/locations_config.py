@@ -1,19 +1,23 @@
-from configparser import ConfigParser
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Union
 
+from lib.config.ini_config_parser import IniConfigParser
 from lib.general.paths import APP_DIR
 
 
 @dataclass(frozen=True)
 class LocationsConfig:
+    app_dir: Path
+    log_dir: Path
+    alc_dir: Path
+
     @classmethod
     def create(
         cls,
-        app_dir_str: Path,
-        log_dir_str: Path,
-        alc_dir_str: Path
+        app_dir_str: str,
+        log_dir_str: str,
+        alc_dir_str: str
     ):
         app_dir = cls._to_path(app_dir_str, APP_DIR)
         log_dir = cls._to_path(log_dir_str, app_dir)
@@ -25,10 +29,6 @@ class LocationsConfig:
             alc_dir
         )
 
-    app_dir: Path
-    log_dir: Path
-    alc_dir: Path
-
     def props(self) -> Tuple[str, str, str]:
         return (
             self.app_dir.as_posix(),
@@ -37,7 +37,7 @@ class LocationsConfig:
         )
 
     @classmethod
-    def load(cls, cp: ConfigParser, default: 'Config'):
+    def load(cls, icp: IniConfigParser, default: 'LocationsConfig'):
         section = "LOCATIONS"
 
         (
@@ -48,8 +48,8 @@ class LocationsConfig:
 
         return cls.create(
             app_dir,
-            cp.get(section, "log_dir", fallback=log_dir),
-            cp.get(section, "alc_dir", fallback=alc_dir)
+            icp.get(section, "log_dir", log_dir),
+            icp.get(section, "alc_dir", alc_dir)
         )
 
     @classmethod

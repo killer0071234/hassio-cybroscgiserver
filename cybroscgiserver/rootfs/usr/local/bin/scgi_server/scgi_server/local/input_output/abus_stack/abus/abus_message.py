@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import Tuple
 
-from scgi_server.local.input_output.abus_stack.abus.command_frame import CommandFrame, \
-    Direction, CommandFrameUtil, Type
-from scgi_server.local.input_output.abus_stack.abus.transport_frame import TransportFrameUtil
-from scgi_server.local.input_output.abus_stack.can_protocol.iex_frame import IexFrame
-from scgi_server.local.input_output.abus_stack.udp.udp_message import UdpMessage
+from scgi_server.local.input_output.abus_stack.abus.command_frame import \
+    CommandFrame, Direction, CommandFrameUtil, Type
+from scgi_server.local.input_output.abus_stack.abus.transport_frame \
+    import TransportFrameUtil
+from scgi_server.local.input_output.abus_stack.udp.udp_message \
+    import UdpMessage
 
 
 @dataclass()
@@ -85,16 +86,6 @@ class AbusMessageUtil:
     @classmethod
     def udp_msg_to_abus_msg(cls, udp_msg: UdpMessage) -> AbusMessage:
         return cls.create_abus_msg_from_bytes(udp_msg.data, udp_msg.addr)
-
-    @classmethod
-    def iex_frame_to_abus_msg(cls, iex_frames: List[IexFrame]) -> AbusMessage:
-        transport_frame_bytes = b''
-        for frame in iex_frames:
-            transport_frame_bytes += frame.data
-
-        return cls.create_abus_msg_from_bytes(
-            transport_frame_bytes, ('0.0.0.0', 0)
-        )
 
     @classmethod
     def create_abus_msg_from_bytes(cls,

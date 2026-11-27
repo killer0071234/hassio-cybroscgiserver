@@ -2,7 +2,7 @@
 
 <configuration>
 
-<!-- list create an array of variables -->
+  <!-- list organizes a number of variables into a named group -->
 
   <list>
     <group>
@@ -11,9 +11,16 @@
       <item>c20001</item>
       <item>c20002</item>
     </group>
+    <group>
+      <name>measurements</name>
+      <item>cybro_iw12</item>
+      <item>cybro_iw13</item>
+      <item>cybro_iw14</item>
+      <item>cybro_iw15</item>
+    </group>
   </list>
 
-  <!-- variables that are written periodically -->
+  <!-- variables that are stored periodically -->
 
   <sample>
     <task>
@@ -25,14 +32,11 @@
     <task>
       <period>10s</period>
       <enabled>true</enabled>
-      <variable>{cybro}.cybro_iw12</variable>
-      <variable>{cybro}.cybro_iw13</variable>
-      <variable>{cybro}.cybro_iw14</variable>
-      <variable>{cybro}.cybro_iw15</variable>
+      <variable>{cybro}.{measurements}</variable> <!-- 12 variables -->
     </task>
   </sample>
 
-  <!-- events are read periodically and written when the variable is set -->
+  <!-- variables that are checked periodically and stored on 0-to-1 transition -->
 
   <event>
     <task>
@@ -45,7 +49,7 @@
     </task>
   </event>
 
-  <!-- alarms are read periodically and written when the variable is set or out of range -->
+  <!-- variables that are checked periodically and stored on 0-to-1 or out-of-range transition -->
 
   <alarm>
     <task>

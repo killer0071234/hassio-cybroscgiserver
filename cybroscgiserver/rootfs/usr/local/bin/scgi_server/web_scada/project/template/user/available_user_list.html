@@ -1,0 +1,16 @@
+{% if items.count %}
+<table class="content_items">
+    <tr>
+        <th style="width: 25px;">&nbsp;</th>
+        <th>User</th>
+    </tr>
+    {% for item in items %}
+    <tr class="hover_row">
+        <td><input type="checkbox" class="admin_chx" id="admin_chx_{{ item.id }}" rel="{{ item.id }}" name="{{ item.format_name }}" /></td>
+        <td><label for="admin_chx_{{ item.id }}">{{ item.format_name }}</label></td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No users found.</p>
+{% endif %}

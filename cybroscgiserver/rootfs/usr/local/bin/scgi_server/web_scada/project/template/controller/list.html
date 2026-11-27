@@ -1,0 +1,58 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}Manage controllers{% endblock %}
+
+{% block main_content %}
+<h1>Manage controllers</h1>
+
+<div class="toolbar">
+    <a href="/controller/edit/"><img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Create new controller</a>
+</div>
+
+<table class="content_items" cellspacing="0px">
+    <tr>
+        <th style="width: 40px;" class="col1">NAD</th>
+        <th style="width: 150px;">Owner</th>
+        <th>Location</th>
+        <th style="width: 150px;">Plant</th>
+        <th style="width: 50px; text-align: center;">Active</th>
+        <th style="width: 50px; text-align: center;">Delete</th>
+    </tr>
+
+    {% for item in items %}
+        <tr class="hover_row">
+            <td class="col1">
+                <a href="/controller/edit/{{ item.id }}/" style="display: block;" title="Edit controller">{{ item.nad }}</a>
+            </td>
+
+            <td>{% if item.owner %}{{ item.owner.format_name }}{% else %}-{% endif %}</td>
+
+            <td>{% if item.location %}{{ item.location }}{% else %}-{% endif %}</td>
+
+            <td>{% if item.plant %}{{ item.plant.format_name }}{% else %}-{% endif %}</td>
+
+            <td class="col3">
+                <a href="/controller/toggle_active/{{ item.id }}/" title="Make {% if item.active %}inactive{% else %}active{% endif %}">
+                    <img src="{% if item.active %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+                </a>
+            </td>
+
+            <td class="col4">
+                <a href="/controller/delete/{{ item.id }}/" class="delete_item" rel="{{ item.nad }}">
+                    <img src="{% static 'img/ico_minus.png' %}" alt="" title="Delete" />
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+<script type="text/javascript">
+$(function() {
+    $(".delete_item").click(function() {
+        let name = $(this).attr("rel");
+        return confirm('Delete controller "' + name + '"?');
+    });
+});
+</script>
+{% endblock %}

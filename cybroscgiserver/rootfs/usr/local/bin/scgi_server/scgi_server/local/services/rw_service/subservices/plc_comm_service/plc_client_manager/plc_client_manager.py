@@ -9,7 +9,7 @@ from scgi_server.local.defaults import MAX_FRAME_BYTES, RW_NAD
 from scgi_server.local.errors import ScgiServerError
 from scgi_server.local.general.errors import ExchangerTimeoutError
 from scgi_server.local.general.transaction_id_generator import \
-    transaction_id_generator
+    TransactionIdGeneratorType
 from scgi_server.local.input_output.abus_stack.abus.abus_exchanger import \
     AbusExchanger
 from scgi_server.local.services.plc_detection_service.plc_detection_service \
@@ -23,14 +23,15 @@ from scgi_server.local.services.rw_service.subservices.plc_comm_service \
 
 class PlcClientManager:
     def __init__(
-            self,
-            log: ConditionalLogger,
-            client_log: ConditionalLogger,
-            loop: AbstractEventLoop,
-            plc_info_service: 'PlcInfoService',
-            plc_activity_service: PlcActivityService,
-            detection_service: PlcDetectionService,
-            cpu_intensive_task_runner: CPUIntensiveTaskRunner
+        self,
+        log: ConditionalLogger,
+        client_log: ConditionalLogger,
+        loop: AbstractEventLoop,
+        plc_info_service: 'PlcInfoService',
+        plc_activity_service: PlcActivityService,
+        detection_service: PlcDetectionService,
+        cpu_intensive_task_runner: CPUIntensiveTaskRunner,
+        trans_id_generator: TransactionIdGeneratorType
     ):
         self._log: ConditionalLogger = log
         self._client_log: ConditionalLogger = client_log
@@ -44,6 +45,7 @@ class PlcClientManager:
         self._cpu_intensive_task_runner: CPUIntensiveTaskRunner = (
             cpu_intensive_task_runner
         )
+        self._transaction_id_generator = trans_id_generator
 
         self._exchanger: Optional[AbusExchanger] = None
 
@@ -146,7 +148,7 @@ class PlcClientManager:
             self._nad,
             plc_info,
             self._plc_activity_service,
-            transaction_id_generator(0, 0xFFFF),
+            self._transaction_id_generator,
             MAX_FRAME_BYTES,
             self._exchanger,
             self._cpu_intensive_task_runner

@@ -1,44 +1,41 @@
-from collections import OrderedDict
-from configparser import ConfigParser
-
-from lib.config.errors import ConfigError
+from lib.config.ini_config_parser import IniConfigParser
 
 
 class ConfigLoaderError(Exception):
-    def __str__(self):
-        return "ConfigLoaderError"
+    pass
 
 
 class ConfigLoaderFileNotFoundError(Exception):
-    def __str__(self):
-        return "ConfigLoaderFileNotFoundError"
-
-
-class MultiOrderedDict(OrderedDict):
-    def __setitem__(self, key, value):
-        if isinstance(value, list) and key in self:
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-
-def create_config_parser() -> ConfigParser:
-    return ConfigParser(dict_type=MultiOrderedDict, strict=False)
-
+    pass
 
 def read_config_from_file(config_file: str,
                           config_class,
                           defaults):
     """Reads config from init file into Config object.
     """
-    # Normal dict is replaced with custom to allow multiple occurrence of the
-    # same key in one section.
-    cp = create_config_parser()
+    icp = IniConfigParser()
 
+    # read and parse the .ini file
     try:
-        if len(cp.read(config_file)) == 0:
-            raise ConfigLoaderFileNotFoundError()
-    except ConfigError as e:
-        raise ConfigLoaderError("Can't read config file") from e
+        icp.parse(config_file)
 
-    return config_class.load(cp, defaults)
+    except FileNotFoundError as e:
+        raise ConfigLoaderFileNotFoundError(
+            f"Config missing: {config_file}"
+        ) from e
+
+    except Exception as e:
+        raise ConfigLoaderError(
+            f"Malformed config: {config_file}"
+        ) from e
+
+    # convert parsed data into the application-specific Config object
+    # in a separate try/except block to catch situations where syntax is
+    # valid but value errors occured or sections/keys are missing
+    try:
+        return config_class.load(icp, defaults)
+
+    except Exception as e:
+        raise ConfigLoaderError(
+            f"Malformed config: {config_file}"
+        ) from e

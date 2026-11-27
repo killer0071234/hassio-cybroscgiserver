@@ -1,0 +1,474 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+{% block title %}{% if item.id %}Edit user - {{ item.format_name }}{% else %}New user{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script type="text/javascript" src="{% static 'inc/js/ui/jquery-ui.min.js' %}"></script>
+<link href="{% static 'inc/themes/smoothness/jquery-ui.css' %}" rel="stylesheet" type="text/css" />
+<style type="text/css">
+    #mail_test {
+        padding: 5px 10px 5px 10px;
+    }
+    #mail_test:hover {
+        background-color: #1F91C1;
+        color: white;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+
+{% block main_content %}
+<div id="page_edit">
+    <h1>{% if item.id %}Edit user - {{ item.format_name }}{% else %}New user{% endif %}</h1>
+    <form id="fm"
+          method="post"
+          {% if user_management %}
+          action="/user/edit/{% if item.id %}{{ item.id }}/{% endif %}"
+          {% else %}
+          action="/profile/edit/"
+          {% endif %}
+    >
+        <div class="toolbar">
+            {% if user_management %}
+            <a href="/user/list/" id="cancel"><img src="{% static 'img/ico_signout.png' %}" class="ico" alt=""/>Back</a>
+            {% endif %}
+            <a href="#" id="save"><img src="{% static 'img/ico_save.png' %}" class="ico" alt=""/>Save</a>
+        </div>
+        <h3>General</h3>
+        <table class="edit">
+            <tr>
+                <td class="col1">User name:</td>
+                <td class="col2">
+                    {% if item.id %}
+                    <strong>{{ item.username }}</strong>
+                    {% else %}
+                    <label for="username"></label>
+                    <input type="text" name="username" id="username" style="width: 300px;" value="{{item.username }}" />
+                    <span class="err" id="err_username" style="display: none;"></span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">Real name:</td>
+                <td class="col2">
+                    <label for="name"></label>
+                    <input type="text" name="name" id="name" style="width: 300px;" value="{{item.name }}" />
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">Email(s):</td>
+                <td class="col2">
+                    <label for="email"></label>
+                    <input type="text" name="email" id="email" style="width: 300px;" value="{{item.email }}" />
+                    <span title="Enter email address to receive reports, separate multiple addresses with a comma" style="background-color: #3184E5; margin-left: 5px; padding: 3px; border-radius: 3px 3px 3px 3px; color: white;">?</span>
+                    <a href="#" id="mail_test" style="margin-left: 5px;">
+                        <img src="{% static 'img/ico_ping.png' %}" class="ico" alt=""/>Test
+                    </a>
+                    <img id="mail_test_res" src="" style ="margin-left: 5px;" class="ico" alt="">
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">Password:</td>
+                <td class="col2">
+                    <label for="password1"></label>
+                    <input type="password" name="password1" id="password1" style="width: 300px;" value="" />
+                    <span class="err" id="err_password1" style="display: none;">At least 5 characters!</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">Password (repeat):</td>
+                <td class="col2">
+                    <label for="password2"></label>
+                    <input type="password" name="password2" id="password2" style="width: 300px;" value="" />
+                    <span class="err" id="err_password2" style="display: none;">Passwords don't match!</span>
+                </td>
+            </tr>
+        </table>
+        <br/><br/>
+        <div class="toolbar">
+            <h3>User home pages</h3>
+            {% if item != request.user or request.user.permissions.can_manage_users %}
+                <a href="#" id="show_select_homepages_dlg">
+                    <img src="{% static 'img/ico_document_pencil.png' %}" class="ico" alt=""/>Select
+                </a>
+            {% endif %}
+            <div class="cleaner"></div>
+        </div>
+        <table id="homepages_list" class="content_items" cellspacing="0px">
+            <thead>
+                <tr>
+                    <th class="col1" style="width: 200px;">Plant</th>
+                    <th>Page</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if homepages %}
+                {% for p in homepages %}
+                <tr>
+                    <td class="col1">{{ p.plant.format_name }}</td>
+                    <td>{{ p.format_name }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td class="col1" colspan="2">No home pages defined.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        <br/><br/>
+        <h3>Permissions</h3>
+        <table class="edit">
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="is_server_admin" id="is_server_admin" class="permission_chx" {% if item.permissions.is_server_admin %}checked="checked"{% endif %} {% if not request.user.permissions.is_server_admin %}disabled="disabled"{% endif %} />
+                    <label for="is_server_admin">Server admin</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_site_content" id="can_manage_site_content" class="permission_chx" {% if item.permissions.can_manage_site_content %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_site_content %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_site_content">Can manage site content</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_users" id="can_manage_users" class="permission_chx" {% if item.permissions.can_manage_users %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_users %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_users">Manage users</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_controllers" id="can_manage_controllers" class="permission_chx" {% if item.permissions.can_manage_controllers %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_controllers %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_controllers">Manage controllers</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_templates" id="can_manage_templates" class="permission_chx" {% if item.permissions.can_manage_templates %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_templates %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_templates">Manage templates</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_media" id="can_manage_media" class="permission_chx" {% if item.permissions.can_manage_media %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_media %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_media">Manage media</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="can_manage_plants" id="can_manage_plants" class="permission_chx" {% if item.permissions.can_manage_plants %}checked="checked"{% endif %} {% if not request.user.permissions.can_manage_plants %}disabled="disabled"{% endif %} />
+                    <label for="can_manage_plants">Manage plants</label>
+                </td>
+            </tr>
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="rw_tags_access" id="rw_tags_access" class="permission_chx" {% if item.permissions.rw_tags_access %}checked="checked"{% endif %} {% if not request.user.permissions.rw_tags_access %}disabled="disabled"{% endif %} />
+                    <label for="rw_tags_access">Write tags</label>
+                </td>
+            </tr>
+        </table>
+        <br/><br/>
+        <h3>Reports</h3>
+        <table class="edit">
+            <tr>
+                <td class="col1">&nbsp;</td>
+                <td class="col2">
+                    <input type="checkbox" name="alarms_events_subscription" id="alarms_events_subscription" class="subscription_chx" {% if item.subscriptions.alarms_events_subscription %}checked="checked"{% endif %} />
+                    <label for="alarms_events_subscription">Subscribed to alarms and events</label>
+                </td>
+            </tr>
+        </table>
+        <input type="hidden" name="homepages" id="homepages" value="{% if item.id %}{% for p in item.homepages.all %}{{ p.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}" />
+        {% if item.id %}
+        <br/><br/>
+        <h3>User controllers</h3>
+            {% if controllers %}
+            <table class="content_items user_controllers">
+                <tr>
+                    <th class="col1">NAD</th>
+                    <th class="col2">Plant</th>
+                    <th class="col3">In push list</th>
+                    <th class="col4">Ping result</th>
+                    <th class="col5">&nbsp;</th>
+                </tr>
+                {% for c in controllers %}
+                    <tr class="controller_row">
+                        <td class="col1">c{{ c.nad }}</td>
+                        <td class="col2">{% if c.plant %}{{ c.plant.name }}{% else %}-{% endif %}</td>
+                        <td class="col3" id="in_push_list_{{ c.nad }}">-</td>
+                        <td class="col4" id="ping_result_{{ c.nad }}">-</td>
+                        <td class="col5">
+                            <a href="#" class="ping_controller toolbar_button" id="ping_{% if c.plant %}{{ c.plant.id }}{% else %}0{% endif %}_{{ c.nad }}">
+                                <img src="{% static 'img/ico_ping.png' %}" class="ico" alt=""/>Ping
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p>User has no assigned controllers.</p>
+            {% endif %}
+        {% endif %}
+    </form>
+</div>
+{% if item != request.user or request.user.permissions.can_manage_users %}
+<div id="dlg_homepages" class="dialog" title="User home pages" style="display: none;">
+    <h1>Select user home pages</h1>
+
+    <label for="select_homepages"></label>
+    <select name="select_homepages" id="select_homepages" size="30" multiple="multiple" style="width: 478px; font-size: 9pt;">
+        {% for p in plant_pages %}
+            {% if not item.id and forloop.first %}
+                <option value="{{ p.id }}" title="{{ p.plant.format_name }}" rel="{{ p.name }}">
+                    {{ p.get_list_indent|safe }}
+                    {{ p.name }}
+                </option>
+            {% else%}
+                <option value="{{ p.id }}" title="{{ p.plant.format_name }}" rel="{{ p.name }}">
+                    {{ p.get_list_indent|safe }}
+                    {{ p.name }}
+                </option>
+            {% endif %}
+        {% endfor %}
+    </select>
+</div>
+{% endif %}
+
+<script type="text/javascript">
+{% if user_management %}
+function load_edit_order_area() {
+    let parent_id = $("#parent option:selected").val();
+    let current_id = {% if item.id %}{{ item.id }}{% else %}0{% endif %};
+
+    $("#page_order_edit").load("/page/edit/get_order_area/" + parent_id + "/" + current_id + "/");
+}
+{% endif %}
+
+$(function() {
+{% if item != request.user or request.user.permissions.can_manage_users %}
+    $("#show_select_homepages_dlg").click(function() {
+        let hp_list = $("#homepages").val().split(",");
+
+        $("#select_homepages option").each(function (i) {
+            let id = $(this).val();
+            if (hp_list.indexOf(id) !== -1) {
+                $(this).attr("selected", "selected");
+            } else {
+                $(this).removeAttr("selected");
+            }
+        });
+
+        $("#dlg_homepages").dialog('open');
+        return false;
+    });
+
+    $("#dlg_homepages").dialog({
+        bgiframe: true,
+        autoOpen: false,
+        width: 500,
+        modal: true,
+        resizable: false,
+        buttons: {
+            "Cancel": function () {
+                $(this).dialog('close');
+            },
+            "Ok": function() {
+                let html = "";
+                let ids = [];
+
+                $("#select_homepages option:selected").each(function(i) {
+                    let plant_name = $(this).attr("title");
+                    let page_name = $(this).attr("rel");
+
+                    html +=
+                        '<tr>' +
+                            '<td class="col1">' + plant_name + '</td>' +
+                            '<td>' + page_name + '</td>' +
+                        '</tr>';
+
+                    ids.push($(this).val());
+                });
+
+                $("#homepages_list tbody").html(html);
+                $("#homepages").val(ids.join(","));
+
+                $(this).dialog('close');
+            }
+        },
+        close: function() {}
+    });
+{% endif %}
+
+{% if item.id and controllers %}
+    $(".ping_controller").click(function() {
+        let params = $(this).attr("id").split("_");
+        let plant_id = params[1];
+        let nad = params[2];
+
+        function set_status_img(nad, status)
+        {
+            let img = "";
+            switch(status)
+            {
+                case "wait":
+                    img = "ajax_loader.gif";
+                    break;
+                case "ok":
+                    img = "check_on.png";
+                    break;
+                default:
+                    img = "ico_cross.png";
+                    break;
+            }
+            $("#ping_result_" + nad).html('<img src="{% static 'img' %}/' + img + '" />');
+        }
+
+        set_status_img(nad, "wait");
+
+        $.get(
+            "/scgi/?c" + nad + ".push_message_req",
+            {},
+            function(xml)  {
+                if (xml.length !== 0)  {
+                    $("var", xml).each(function(i) {
+                        let name = $(this).find("name").text();
+                        if (name === "c" + nad + ".push_message_req") {
+                            let value = $(this).find("value").text();
+                            set_status_img(nad, value === "?" ? "err" : "ok");
+                        }
+                    });
+                } else {
+                    set_status_img(nad, "err");
+                }
+            }
+        );
+        $(this).blur();
+        return false;
+    });
+    {# ******************* read controllers in push list ******************* #}
+    $.get("/scgi/?sys.nad_list", {}, function(xml) {
+        $("item", xml).each(function(i) {
+            let nad = $(this).text();
+            $("#in_push_list_" + nad).html('<img src="{% static 'img/check_on.png' %}" />');
+        });
+    });
+{% endif %}
+
+    $("#mail_test").click(function() {
+        let mail_test_res = $("#mail_test_res")
+
+        mail_test_res.attr("src", "{% static 'img/ajax_loader.gif' %}");
+        $.post(
+            "/test_report/",
+            {
+                "emails" : $("#email").val()
+            },
+            function(data) {
+                let resp = eval(data);
+                let allOK = true;
+                let tooltip = "";
+
+                for (let i = 0; i < resp.length; i++) {
+                    if (tooltip.length > 0) {
+                        tooltip += "\n";
+                    }
+                    if (resp[i].error === "OK") {
+                        tooltip += resp[i].email+": OK";
+                    } else {
+                        allOK = false;
+                        tooltip += resp[i].email+": "+resp[i].error;
+                    }
+                }
+
+                if (allOK) {
+                    mail_test_res.attr("src", "{% static 'img/check_on.png' %}");
+                    mail_test_res.attr("title", tooltip);
+                } else {
+                    mail_test_res.attr("src", "{% static 'img/ico_cross.png' %}");
+                    mail_test_res.attr("title", tooltip);
+                }
+        })
+        .fail(function() {
+            mail_test_res.attr("src", "{% static 'img/ico_cross.png' %}");
+            mail_test_res.attr("title", "Test failed");
+        });
+
+        return false;
+    });
+
+    $("#save").click(function() {
+        let username = $("#username").val();
+        $("#err_username").hide();
+        $("#err_password1").hide();
+        $("#err_password2").hide();
+
+        {% if not item.id %}
+        $.get(
+            "/service/username_exists/" + username + "/",
+            function(data) {
+                if (data !== "0") {
+                    $("#err_username").text("User name already exists!").show();
+                    return false;
+                }
+
+                if (username.length < 3) {
+                    $("#err_username").text("At least 3 characters!").show();
+                    return false;
+                }
+        {% endif %}
+
+            let pass1 = $("#password1").val();
+            let pass2 = $("#password2").val();
+            let password_mandatory = {% if item.id %}false{% else %}true{% endif %};
+
+            if (password_mandatory || pass1.length > 0 || pass2.length > 0)
+            {
+                if (pass1.length < 5)
+                {
+                    $("#err_password1").show();
+                    return false;
+                }
+
+                if (pass1 !== pass2)
+                {
+                    $("#err_password2").show();
+                    return false;
+                }
+            }
+
+            if ($("#order_changed").val() === "1") {
+                for (let i = 0; i < order_items.length; i++) {
+                    $("#order_" + i).val(order_items[i][1]);
+                }
+            }
+
+            $("#fm").submit();
+
+        {% if not item.id %}
+            }
+        );
+        {% endif %}
+
+        return false;
+    });
+
+    $("#password1").val("");
+    $("#password2").val("");
+
+    {% if item == request.user %}
+        $(".permission_chx").attr('disabled', 'disabled');
+    {% endif %}
+});
+</script>
+
+{% endblock %}

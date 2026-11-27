@@ -1,0 +1,64 @@
+{% extends "base/body_content.html" %}
+{% load static %}
+
+{% block title %}Manage templates{% endblock %}
+
+{% block main_content %}
+<h1>Manage templates</h1>
+<div class="toolbar">
+    <a href="/template/edit/"><img src="{% static 'img/ico_plus.png' %}" class="ico" alt=""/>Create new template</a>
+</div>
+<table class="content_items">
+    <tr>
+        <th class="col1">Template name</th>
+        <th style="width: 150px;">Author</th>
+        <th style="width: 250px;">Description</th>
+        <th colspan="2" style="text-align: center;">Order</th>
+        <th style="width: 80px; text-align: center;">Published</th>
+        <th style="width: 50px; text-align: center;">Delete</th>
+    </tr>
+    {% for item in items %}
+    <tr class="hover_row">
+        <td class="col1">
+            <a href="/template/edit/{{ item.id }}/" style="display: block;" rel="{{ item.format_name }}" title="Edit template">{{ item.format_name }}</a>
+        </td>
+        <td>{{ item.author.format_name }}</td>
+        <td>{{ item.description }}</td>
+        <td style="width: 22px; text-align: right;">
+            {% if not forloop.first %}
+                <a href="/template/change_order/up/{{ item.id }}/">
+                    <img src="{% static 'img/ico_move_up.png' %}" alt="" title="Move up" />
+                </a>
+            {% endif %}
+        </td>
+        <td style="width: 22px; text-align: left;">
+            {% if not forloop.last %}
+                <a href="/template/change_order/dn/{{ item.id }}/">
+                    <img src="{% static 'img/ico_move_dn.png' %}" alt="" title="Move down" />
+                </a>
+            {% endif %}
+        </td>
+        <td class="col3">
+            <a href="/template/toggle_published/{{ item.id }}/" title="{% if item.published %}Unpublish{% else %}Publish{% endif %}">
+                <img src="{% if item.published %}{% static 'img/check_on.png' %}{% else %}{% static 'img/check_on_gray.png' %}{% endif %}" alt="" />
+            </a>
+        </td>
+        <td class="col4">
+            <a href="/template/delete/{{ item.id }}/" class="delete_item" rel="{{ item.name }}">
+                <img src="{% static 'img/ico_minus.png' %}" alt="" title="Delete" />
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<script type="text/javascript">
+$(function() {
+    $(".delete_item").click(function() {
+        const name = $(this).attr("rel");
+        return confirm('Delete template "' + name + '"?');
+    });
+});
+</script>
+
+{% endblock %}
